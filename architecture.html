@@ -298,7 +298,7 @@
   <div class="path-card online">
     <h2>② Online — Query</h2>
     <p>Runs on <strong>every user question</strong>. Embeds the question, searches
-    Postgres for relevant chunks, reranks them, then calls Claude to write a
+    Postgres for relevant chunks, reranks them, then calls Groq / Llama 3.3 to write a
     grounded, cited answer.</p>
     <span class="trigger">Triggered by user typing in the UI</span>
   </div>
@@ -399,12 +399,12 @@
     <div class="arrow">↓<span class="arrow-label">chunks flow back up to agent</span></div>
 
     <div class="node n-agent" style="border-color:#9333ea;">
-      <div class="node-title">⑥ Agent calls Gemini to generate answer</div>
+      <div class="node-title">⑥ Agent calls Groq to generate answer</div>
       <div class="node-sub">
         Prompt = system instructions + retrieved chunks + user question<br>
-        Gemini writes the answer and cites which chunks it used
+        Llama 3.3 writes the answer and cites which chunks it used
       </div>
-      <div class="node-file">Google Gemini API (via fda_rag/agent/)</div>
+      <div class="node-file">Groq API — llama-3.3-70b-versatile (via fda_rag/agent/)</div>
     </div>
     <div class="arrow">↓<span class="arrow-label">{ answer, sources }</span></div>
 
@@ -434,9 +434,9 @@
     </div>
 
     <div class="node n-ext">
-      <div class="node-title">Google — Gemini</div>
+      <div class="node-title">Groq — Llama 3.3 70B</div>
       <div class="node-sub">Called in step ⑥ to generate the final answer from retrieved chunks</div>
-      <div class="node-file">GEMINI_API_KEY</div>
+      <div class="node-file">GROQ_API_KEY</div>
     </div>
 
     <div class="node n-ext" style="border-color:#475569; background:#0f1a0f;">
@@ -511,7 +511,7 @@
     <div class="dep-name" style="color:#a78bfa;">agent/</div>
     <div class="dep-calls">
       Imports <span>retrieval/</span><br>
-      Calls <span>Google Gemini API</span> (external)<br>
+      Calls <span>Groq API</span> (external)<br>
       Logged by <span>LangSmith</span> (passive)
     </div>
   </div>
@@ -570,7 +570,7 @@
       <td>Offline (embed chunks) + Online (embed question + rerank results)</td>
     </tr>
     <tr>
-      <td>GEMINI_API_KEY</td>
+      <td>GROQ_API_KEY</td>
       <td>agent/ — generate node</td>
       <td>Online only — called once per user question to generate the answer</td>
     </tr>

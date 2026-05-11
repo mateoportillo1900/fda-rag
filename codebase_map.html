@@ -334,7 +334,7 @@
         &nbsp;&nbsp;→ <span class="purple">agent.invoke()</span><br>
         &nbsp;&nbsp;&nbsp;&nbsp;→ <span class="green">retrieve()</span> → Neon<br>
         &nbsp;&nbsp;&nbsp;&nbsp;→ <span class="green">rerank()</span> → Voyage AI<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;→ <span class="purple">generate()</span> → Gemini<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;→ <span class="purple">generate()</span> → Groq / Llama 3.3<br>
         &nbsp;&nbsp;← <span class="highlight">{ answer, sources }</span>
       </div>
     </div>
@@ -359,7 +359,7 @@
         Every layer reads credentials from here.<br>
         <span class="highlight">DATABASE_URL</span> → DB access<br>
         <span class="red">VOYAGE_API_KEY</span> → embeddings<br>
-        <span class="red">GEMINI_API_KEY</span> → LLM answers
+        <span class="red">GROQ_API_KEY</span> → LLM answers
       </div>
     </div>
 
@@ -444,11 +444,11 @@
     <div class="folder f-ext">
       <div class="folder-header">
         <span class="folder-icon">🌐</span>
-        <span class="folder-name">Google Gemini</span>
+        <span class="folder-name">Groq — Llama 3.3 70B</span>
       </div>
       <div class="folder-desc">Reads the chunks + question, writes a cited answer</div>
       <div class="file-list">
-        <div class="file">model: gemini-1.5-flash</div>
+        <div class="file">model: llama-3.3-70b-versatile</div>
         <div class="file">system prompt: cite sources, no hallucination</div>
         <div class="file">output: plain-text answer</div>
       </div>
@@ -492,7 +492,7 @@
       Imports:<br>
       <span class="tag tag-import">retrieval/</span><br>
       Calls externally:<br>
-      <span class="tag tag-ext">Gemini API</span>
+      <span class="tag tag-ext">Groq API</span>
     </div>
   </div>
 
