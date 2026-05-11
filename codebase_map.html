@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FDA RAG — Codebase Map</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #080d14;
+    color: #e2e8f0;
+    padding: 40px 32px 80px;
+    min-width: 1100px;
+  }
+
+  h1 { font-size: 20px; font-weight: 700; color: #f8fafc; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #475569; margin-bottom: 10px; }
+
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 14px;
+    margin-bottom: 36px; padding: 14px 18px;
+    background: #0f172a; border-radius: 10px;
+    border: 1px solid #1e293b;
+  }
+  .legend-item { display: flex; align-items: center; gap: 7px; font-size: 11px; color: #64748b; }
+  .legend-dot  { width: 11px; height: 11px; border-radius: 3px; }
+
+  /* ── section heading ── */
+  .section-label {
+    font-size: 10px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: #334155; margin-bottom: 14px;
+  }
+
+  /* ────────────────────────────────────────────────────────────
+     MAIN THREE-COLUMN GRID
+  ──────────────────────────────────────────────────────────── */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 300px 1fr 300px;
+    gap: 0;
+    align-items: start;
+    margin-bottom: 56px;
+  }
+
+  /* ── folder card ── */
+  .folder {
+    border-radius: 12px;
+    border: 1px solid;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .folder-header {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 10px;
+  }
+  .folder-icon { font-size: 14px; }
+  .folder-name {
+    font-size: 12px; font-weight: 700;
+    font-family: "SF Mono", "Fira Code", monospace;
+  }
+  .folder-desc {
+    font-size: 11px; color: #64748b; margin-bottom: 10px; line-height: 1.5;
+  }
+  .file-list { display: flex; flex-direction: column; gap: 4px; }
+  .file {
+    font-size: 10px; font-family: monospace;
+    padding: 3px 8px; border-radius: 5px;
+    background: rgba(255,255,255,0.04);
+    color: #94a3b8;
+  }
+  .file .file-desc { color: #475569; margin-left: 6px; font-family: sans-serif; }
+
+  /* colour themes */
+  .f-script   { background: #0a1628; border-color: #1e3a5f; }
+  .f-script   .folder-name { color: #60a5fa; }
+  .f-ingest   { background: #0a1628; border-color: #1e3a5f; }
+  .f-ingest   .folder-name { color: #60a5fa; }
+  .f-retrieve { background: #0a1f0a; border-color: #166534; }
+  .f-retrieve .folder-name { color: #4ade80; }
+  .f-agent    { background: #160a2e; border-color: #4c1d95; }
+  .f-agent    .folder-name { color: #a78bfa; }
+  .f-api      { background: #1a1600; border-color: #854d0e; }
+  .f-api      .folder-name { color: #fbbf24; }
+  .f-ui       { background: #0a1f1e; border-color: #134e4a; }
+  .f-ui       .folder-name { color: #2dd4bf; }
+  .f-tests    { background: #1a0f00; border-color: #7c2d12; }
+  .f-tests    .folder-name { color: #fb923c; }
+  .f-data     { background: #0f0f1a; border-color: #312e81; }
+  .f-data     .folder-name { color: #818cf8; }
+  .f-env      { background: #0f1a0a; border-color: #166534; }
+  .f-env      .folder-name { color: #86efac; }
+  .f-ext      { background: #1a0a0a; border-color: #7f1d1d; }
+  .f-ext      .folder-name { color: #f87171; }
+  .f-db       { background: #111827; border-color: #374151; }
+  .f-db       .folder-name { color: #d1d5db; }
+
+  /* ── middle connector column ── */
+  .middle-col {
+    display: flex; flex-direction: column;
+    align-items: center; padding: 0 16px;
+    gap: 0;
+  }
+
+  /* ── connection boxes in the middle ── */
+  .conn-block {
+    width: 100%; background: #0f172a;
+    border: 1px solid #1e293b; border-radius: 10px;
+    padding: 12px 16px; margin-bottom: 12px;
+    text-align: center;
+  }
+  .conn-block .conn-title {
+    font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 6px;
+  }
+  .conn-block .conn-flow {
+    font-size: 10px; color: #475569; line-height: 1.8; font-family: monospace;
+  }
+  .conn-block .conn-flow .highlight { color: #fbbf24; }
+  .conn-block .conn-flow .green     { color: #4ade80; }
+  .conn-block .conn-flow .purple    { color: #a78bfa; }
+  .conn-block .conn-flow .blue      { color: #60a5fa; }
+  .conn-block .conn-flow .teal      { color: #2dd4bf; }
+  .conn-block .conn-flow .red       { color: #f87171; }
+
+  .arrow-down {
+    font-size: 18px; color: #1e293b; text-align: center;
+    padding: 4px 0; line-height: 1;
+  }
+
+  /* ── left/right column containers ── */
+  .left-col  { padding-right: 8px; }
+  .right-col { padding-left: 8px; }
+
+  .path-badge {
+    display: inline-block; font-size: 9px; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 20px; margin-bottom: 14px;
+  }
+  .badge-offline { background: #1e3a5f; color: #93c5fd; }
+  .badge-online  { background: #2d1b5e; color: #c4b5fd; }
+
+  /* ─────────────────────────────────────────────
+     BOTTOM: IMPORT MAP
+  ───────────────────────────────────────────── */
+  .import-section { margin-top: 16px; }
+  .import-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 40px;
+  }
+  .import-card {
+    border: 1px solid #1e293b; border-radius: 10px;
+    padding: 14px 14px; background: #0f172a;
+  }
+  .import-name {
+    font-size: 11px; font-weight: 700; font-family: monospace;
+    margin-bottom: 10px; padding-bottom: 8px;
+    border-bottom: 1px solid #1e293b;
+  }
+  .import-calls { font-size: 10px; color: #475569; line-height: 2.1; }
+  .import-calls .tag {
+    display: inline-block;
+    border-radius: 4px; padding: 0 6px;
+    margin: 1px 1px; font-family: monospace;
+  }
+  .tag-http   { background: #1a1600; color: #fbbf24; }
+  .tag-import { background: #160a2e; color: #a78bfa; }
+  .tag-ext    { background: #1a0a0a; color: #f87171; }
+  .tag-db     { background: #111827; color: #d1d5db; }
+  .tag-file   { background: #0a1f0a; color: #4ade80; }
+
+  /* ─────────────────────────────────────────────
+     DATA FLOW TABLE
+  ───────────────────────────────────────────── */
+  .flow-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 40px; }
+  .flow-table th {
+    text-align: left; padding: 8px 14px;
+    background: #0f172a; color: #475569;
+    font-size: 9px; letter-spacing: .08em;
+    text-transform: uppercase; border-bottom: 1px solid #1e293b;
+  }
+  .flow-table td {
+    padding: 9px 14px; border-bottom: 1px solid #1e293b;
+    vertical-align: middle; color: #cbd5e1;
+  }
+  .flow-table td:first-child { font-family: monospace; font-size: 10px; color: #fbbf24; }
+  .flow-table tr:last-child td { border-bottom: none; }
+  .flow-table tr:hover td { background: #0f172a; }
+
+  hr { border: none; border-top: 1px solid #1e293b; margin: 32px 0; }
+</style>
+</head>
+<body>
+
+<h1>FDA RAG — Codebase Map</h1>
+<p class="subtitle">Every folder, every file, and how they talk to each other</p>
+
+<!-- LEGEND -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#60a5fa"></div> Ingestion (offline)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#4ade80"></div> Retrieval</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#a78bfa"></div> Agent (LangGraph)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div> API (FastAPI)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#2dd4bf"></div> UI (Streamlit)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f87171"></div> External APIs</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#d1d5db"></div> Database (Neon)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#fb923c"></div> Tests</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     THREE-COLUMN MAIN DIAGRAM
+══════════════════════════════════════════════════════════ -->
+<div class="main-grid">
+
+  <!-- ── LEFT: OFFLINE path ── -->
+  <div class="left-col">
+    <span class="path-badge badge-offline">① Offline — runs once to load data</span>
+
+    <div class="folder f-script">
+      <div class="folder-header">
+        <span class="folder-icon">📁</span>
+        <span class="folder-name">scripts/</span>
+      </div>
+      <div class="folder-desc">Standalone scripts you run manually from the terminal</div>
+      <div class="file-list">
+        <div class="file">download_dailymed.py <span class="file-desc">→ fetches XML from FDA API</span></div>
+        <div class="file">migrate.py <span class="file-desc">→ creates DB table + index</span></div>
+        <div class="file">run_ingestion.py <span class="file-desc">→ runs full offline pipeline</span></div>
+      </div>
+    </div>
+
+    <div style="text-align:center; color:#1e3a5f; font-size:20px; margin:4px 0;">↓</div>
+
+    <div class="folder f-data">
+      <div class="folder-header">
+        <span class="folder-icon">📁</span>
+        <span class="folder-name">data/sample/xml/</span>
+      </div>
+      <div class="folder-desc">10 FDA drug label XML files downloaded from DailyMed</div>
+      <div class="file-list">
+        <div class="file">metformin.xml</div>
+        <div class="file">warfarin.xml</div>
+        <div class="file">atorvastatin.xml</div>
+        <div class="file">amoxicillin.xml &nbsp;+ 6 more</div>
+      </div>
+    </div>
+
+    <div style="text-align:center; color:#1e3a5f; font-size:20px; margin:4px 0;">↓</div>
+
+    <div class="folder f-ingest">
+      <div class="folder-header">
+        <span class="folder-icon">📦</span>
+        <span class="folder-name">src/fda_rag/ingestion/</span>
+      </div>
+      <div class="folder-desc">Parses XML → chunks text → embeds → stores in Neon</div>
+      <div class="file-list">
+        <div class="file">parser.py <span class="file-desc">→ extracts 8 section types from XML</span></div>
+        <div class="file">chunker.py <span class="file-desc">→ splits into 1500-char windows</span></div>
+        <div class="file">loader.py <span class="file-desc">→ calls Voyage AI + writes to Neon</span></div>
+        <div class="file">__init__.py <span class="file-desc">→ exports ParsedLabel, Chunk</span></div>
+      </div>
+    </div>
+
+    <div style="text-align:center; color:#1e3a5f; font-size:20px; margin:4px 0;">↓  calls Voyage AI  ↓</div>
+
+    <div class="folder f-ext">
+      <div class="folder-header">
+        <span class="folder-icon">🌐</span>
+        <span class="folder-name">Voyage AI — embed</span>
+      </div>
+      <div class="folder-desc">Converts each text chunk into a float[1024] vector</div>
+      <div class="file-list">
+        <div class="file">model: voyage-3</div>
+        <div class="file">input_type: "document"</div>
+        <div class="file">output: 1024-dim vector per chunk</div>
+      </div>
+    </div>
+
+    <div style="text-align:center; color:#374151; font-size:20px; margin:4px 0;">↓  INSERT INTO drug_chunks  ↓</div>
+
+    <div class="folder f-db">
+      <div class="folder-header">
+        <span class="folder-icon">🗄️</span>
+        <span class="folder-name">Neon — Postgres + pgvector</span>
+      </div>
+      <div class="folder-desc">Cloud database. Stores text + embeddings. Connected via DATABASE_URL in .env</div>
+      <div class="file-list">
+        <div class="file">table: drug_chunks</div>
+        <div class="file">columns: drug_name, section_name, chunk_text</div>
+        <div class="file">column: embedding vector(1024)</div>
+        <div class="file">index: HNSW (fast nearest-neighbour search)</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── MIDDLE: connector ── -->
+  <div class="middle-col">
+
+    <div style="height:60px;"></div>
+
+    <div class="conn-block">
+      <div class="conn-title">How the offline path runs</div>
+      <div class="conn-flow">
+        <span class="blue">run_ingestion.py</span><br>
+        &nbsp;&nbsp;calls <span class="blue">parse_label()</span><br>
+        &nbsp;&nbsp;calls <span class="blue">chunk_label()</span><br>
+        &nbsp;&nbsp;calls <span class="red">embed_chunks()</span> → Voyage AI<br>
+        &nbsp;&nbsp;calls <span class="blue">store_chunks()</span> → Neon
+      </div>
+    </div>
+
+    <div style="height: 80px; border-left: 1px dashed #1e293b; margin: 0 auto;"></div>
+
+    <div class="conn-block" style="border-color:#1e3a5f;">
+      <div class="conn-title" style="color:#60a5fa;">Shared database</div>
+      <div class="conn-flow">
+        Offline path <span class="blue">writes</span> to Neon<br>
+        Online path <span class="green">reads</span> from Neon<br><br>
+        Both use <span class="highlight">DATABASE_URL</span> from .env
+      </div>
+    </div>
+
+    <div style="height: 80px; border-left: 1px dashed #1e293b; margin: 0 auto;"></div>
+
+    <div class="conn-block">
+      <div class="conn-title">How the online path runs</div>
+      <div class="conn-flow">
+        <span class="teal">ui/</span> → HTTP POST /query<br>
+        &nbsp;&nbsp;→ <span class="highlight">api/main.py</span><br>
+        &nbsp;&nbsp;→ <span class="purple">agent.invoke()</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;→ <span class="green">retrieve()</span> → Neon<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;→ <span class="green">rerank()</span> → Voyage AI<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;→ <span class="purple">generate()</span> → Gemini<br>
+        &nbsp;&nbsp;← <span class="highlight">{ answer, sources }</span>
+      </div>
+    </div>
+
+    <div style="height: 60px; border-left: 1px dashed #1e293b; margin: 0 auto;"></div>
+
+    <div class="conn-block" style="border-color:#7c2d12;">
+      <div class="conn-title" style="color:#fb923c;">Tests cover everything</div>
+      <div class="conn-flow">
+        <span style="color:#fb923c;">test_smoke.py</span> → DB connection<br>
+        <span style="color:#fb923c;">test_ingestion.py</span> → parser + chunker<br>
+        <span style="color:#fb923c;">test_retrieval.py</span> → retriever + reranker<br><br>
+        Run with: <span class="highlight">pytest tests/ -v</span>
+      </div>
+    </div>
+
+    <div style="height: 30px;"></div>
+
+    <div class="conn-block" style="border-color:#1e293b;">
+      <div class="conn-title">.env — the key file</div>
+      <div class="conn-flow">
+        Every layer reads credentials from here.<br>
+        <span class="highlight">DATABASE_URL</span> → DB access<br>
+        <span class="red">VOYAGE_API_KEY</span> → embeddings<br>
+        <span class="red">GEMINI_API_KEY</span> → LLM answers
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── RIGHT: ONLINE path ── -->
+  <div class="right-col">
+    <span class="path-badge badge-online">② Online — runs on every question</span>
+
+    <div class="folder f-ui">
+      <div class="folder-header">
+        <span class="folder-icon">📁</span>
+        <span class="folder-name">src/fda_rag/ui/ 🔜</span>
+      </div>
+      <div class="folder-desc">Streamlit chat interface — what the user sees in a browser</div>
+      <div class="file-list">
+        <div class="file">app.py <span class="file-desc">→ coming Week 6</span></div>
+      </div>
+    </div>
+
+    <div style="text-align:center; color:#134e4a; font-size:20px; margin:4px 0;">↓ HTTP POST /query ↓</div>
+
+    <div class="folder f-api">
+      <div class="folder-header">
+        <span class="folder-icon">📦</span>
+        <span class="folder-name">src/fda_rag/api/ ✅</span>
+      </div>
+      <div class="folder-desc">FastAPI app — receives HTTP requests, calls the agent, returns JSON</div>
+      <div class="file-list">
+        <div class="file">main.py <span class="file-desc">→ POST /query, GET /health</span></div>
+        <div class="file">models.py <span class="file-desc">→ QueryRequest, QueryResponse</span></div>
+      </div>
+    </div>
+
+    <div style="text-align:center; color:#854d0e; font-size:20px; margin:4px 0;">↓ agent.invoke() ↓</div>
+
+    <div class="folder f-agent">
+      <div class="folder-header">
+        <span class="folder-icon">📦</span>
+        <span class="folder-name">src/fda_rag/agent/ ✅</span>
+      </div>
+      <div class="folder-desc">LangGraph workflow: retrieve → generate</div>
+      <div class="file-list">
+        <div class="file">graph.py <span class="file-desc">→ compiles the LangGraph</span></div>
+        <div class="file">nodes.py <span class="file-desc">→ retrieve_node, generate_node</span></div>
+        <div class="file">state.py <span class="file-desc">→ AgentState (question/chunks/answer)</span></div>
+        <div class="file">prompts.py <span class="file-desc">→ system prompt + formatter</span></div>
+      </div>
+    </div>
+
+    <div style="text-align:center; color:#4c1d95; font-size:20px; margin:4px 0;">↓ retrieve() + rerank() ↓</div>
+
+    <div class="folder f-retrieve">
+      <div class="folder-header">
+        <span class="folder-icon">📦</span>
+        <span class="folder-name">src/fda_rag/retrieval/ ✅</span>
+      </div>
+      <div class="folder-desc">Embeds query → searches Neon → reranks with Voyage AI</div>
+      <div class="file-list">
+        <div class="file">retriever.py <span class="file-desc">→ vector search via pgvector &lt;=&gt;</span></div>
+        <div class="file">reranker.py <span class="file-desc">→ Voyage AI rerank-2, top 5</span></div>
+        <div class="file">__init__.py <span class="file-desc">→ exports retrieve, rerank</span></div>
+      </div>
+    </div>
+
+    <div style="text-align:center; color:#166534; font-size:20px; margin:4px 0;">↓  calls two external APIs  ↓</div>
+
+    <div class="folder f-ext">
+      <div class="folder-header">
+        <span class="folder-icon">🌐</span>
+        <span class="folder-name">Voyage AI — query + rerank</span>
+      </div>
+      <div class="folder-desc">Embeds the user question, then reranks the top-20 results</div>
+      <div class="file-list">
+        <div class="file">embed: voyage-3, input_type: "query"</div>
+        <div class="file">rerank: rerank-2, top_n: 5</div>
+      </div>
+    </div>
+
+    <div style="text-align:center; color:#374151; font-size:20px; margin:4px 0;">↓  top 5 chunks → generate_node  ↓</div>
+
+    <div class="folder f-ext">
+      <div class="folder-header">
+        <span class="folder-icon">🌐</span>
+        <span class="folder-name">Google Gemini</span>
+      </div>
+      <div class="folder-desc">Reads the chunks + question, writes a cited answer</div>
+      <div class="file-list">
+        <div class="file">model: gemini-1.5-flash</div>
+        <div class="file">system prompt: cite sources, no hallucination</div>
+        <div class="file">output: plain-text answer</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     IMPORT / CALL MAP
+══════════════════════════════════════════════════════════ -->
+<hr />
+<p class="section-label">What each layer imports or calls</p>
+<div class="import-grid">
+
+  <div class="import-card">
+    <div class="import-name" style="color:#2dd4bf;">ui/ &nbsp;<span style="color:#134e4a;font-size:9px;">🔜 week 6</span></div>
+    <div class="import-calls">
+      Does NOT import other layers.<br>
+      Talks to api/ via:<br>
+      <span class="tag tag-http">HTTP POST /query</span><br>
+      <span class="tag tag-http">HTTP GET /health</span>
+    </div>
+  </div>
+
+  <div class="import-card">
+    <div class="import-name" style="color:#fbbf24;">api/ &nbsp;<span style="color:#854d0e;font-size:9px;">✅ built</span></div>
+    <div class="import-calls">
+      Imports:<br>
+      <span class="tag tag-import">agent/</span><br>
+      Exposes:<br>
+      <span class="tag tag-http">POST /query</span>
+      <span class="tag tag-http">GET /health</span>
+    </div>
+  </div>
+
+  <div class="import-card">
+    <div class="import-name" style="color:#a78bfa;">agent/ &nbsp;<span style="color:#4c1d95;font-size:9px;">✅ built</span></div>
+    <div class="import-calls">
+      Imports:<br>
+      <span class="tag tag-import">retrieval/</span><br>
+      Calls externally:<br>
+      <span class="tag tag-ext">Gemini API</span>
+    </div>
+  </div>
+
+  <div class="import-card">
+    <div class="import-name" style="color:#4ade80;">retrieval/ &nbsp;<span style="color:#166534;font-size:9px;">✅ built</span></div>
+    <div class="import-calls">
+      Calls externally:<br>
+      <span class="tag tag-ext">Voyage AI embed</span>
+      <span class="tag tag-ext">Voyage AI rerank</span><br>
+      Queries:<br>
+      <span class="tag tag-db">Neon (psycopg)</span>
+    </div>
+  </div>
+
+  <div class="import-card">
+    <div class="import-name" style="color:#60a5fa;">ingestion/ &nbsp;<span style="color:#1e3a5f;font-size:9px;">✅ built</span></div>
+    <div class="import-calls">
+      Reads:<br>
+      <span class="tag tag-file">data/sample/xml/</span><br>
+      Calls externally:<br>
+      <span class="tag tag-ext">Voyage AI embed</span><br>
+      Writes:<br>
+      <span class="tag tag-db">Neon (psycopg)</span>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     QUICK-REFERENCE COMMAND TABLE
+══════════════════════════════════════════════════════════ -->
+<hr />
+<p class="section-label">Quick-reference — key commands</p>
+<table class="flow-table">
+  <thead>
+    <tr>
+      <th>Command</th>
+      <th>What it does</th>
+      <th>When to run</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>python scripts/download_dailymed.py --sample</td>
+      <td>Downloads 10 FDA drug label XML files into data/sample/xml/</td>
+      <td>Once, before ingestion</td>
+    </tr>
+    <tr>
+      <td>python scripts/migrate.py</td>
+      <td>Creates the drug_chunks table + HNSW index in Neon</td>
+      <td>Once, first-time setup</td>
+    </tr>
+    <tr>
+      <td>python scripts/run_ingestion.py</td>
+      <td>Parses XML → chunks → embeds → stores all drug labels in Neon</td>
+      <td>Once per data load</td>
+    </tr>
+    <tr>
+      <td>uvicorn fda_rag.api.main:app --reload --port 8000</td>
+      <td>Starts the FastAPI server at localhost:8000</td>
+      <td>During development / serving</td>
+    </tr>
+    <tr>
+      <td>pytest tests/ -v</td>
+      <td>Runs all tests (smoke + ingestion + retrieval)</td>
+      <td>After any code change</td>
+    </tr>
+    <tr>
+      <td>ruff check src/ tests/</td>
+      <td>Lints the codebase for errors and style issues</td>
+      <td>Before committing</td>
+    </tr>
+  </tbody>
+</table>
+
+</body>
+</html>

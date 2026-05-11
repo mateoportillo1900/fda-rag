@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment — keep example, ignore the real thing
+.env
+.env.*
+!.env.example
+
+# Data — raw downloads stay local only
+data/raw/
+# Exception: small curated sample is committed so the repo is immediately usable
+!data/sample/
+!data/sample/**
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Jupyter
+.ipynb_checkpoints/
+**/.ipynb_checkpoints
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# uv
+.uv/
+
+# Test / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Type checking / linting caches
+.mypy_cache/
+.ruff_cache/
+
+# Misc
+*.log
+*.tmp

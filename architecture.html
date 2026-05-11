@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FDA RAG — Architecture</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #0f1117;
+    color: #e2e8f0;
+    padding: 40px 24px 80px;
+    min-width: 900px;
+  }
+
+  h1 { font-size: 22px; font-weight: 700; color: #f8fafc; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #64748b; margin-bottom: 48px; }
+
+  /* ── section headers ── */
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #475569;
+    margin-bottom: 16px;
+  }
+
+  /* ── two-path overview ── */
+  .paths {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 56px;
+  }
+  .path-card {
+    border-radius: 12px;
+    padding: 24px 28px;
+    border: 1px solid;
+  }
+  .path-card.offline {
+    background: #0d1f2d;
+    border-color: #1e3a5f;
+  }
+  .path-card.online {
+    background: #1a0d2e;
+    border-color: #3b1f5e;
+  }
+  .path-card h2 {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .path-card.offline h2 { color: #60a5fa; }
+  .path-card.online  h2 { color: #a78bfa; }
+  .path-card p { font-size: 13px; color: #94a3b8; line-height: 1.6; }
+  .path-card .trigger {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+  .path-card.offline .trigger { background: #1e3a5f; color: #93c5fd; }
+  .path-card.online  .trigger { background: #2d1b5e; color: #c4b5fd; }
+
+  /* ── shared node styles ── */
+  .node {
+    border-radius: 10px;
+    padding: 14px 20px;
+    border: 1px solid transparent;
+    position: relative;
+  }
+  .node .node-title {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+  .node .node-sub {
+    font-size: 11px;
+    color: #94a3b8;
+    line-height: 1.5;
+  }
+  .node .node-file {
+    font-size: 10px;
+    font-family: "SF Mono", "Fira Code", monospace;
+    margin-top: 6px;
+    opacity: .6;
+  }
+
+  /* layer colours */
+  .n-ui        { background: #0d2626; border-color: #0d9488; }
+  .n-ui        .node-title { color: #2dd4bf; }
+  .n-api       { background: #1c1a0d; border-color: #ca8a04; }
+  .n-api       .node-title { color: #fbbf24; }
+  .n-agent     { background: #1a0d2e; border-color: #7c3aed; }
+  .n-agent     .node-title { color: #a78bfa; }
+  .n-retrieval { background: #0d1f0d; border-color: #16a34a; }
+  .n-retrieval .node-title { color: #4ade80; }
+  .n-ingestion { background: #0d1f2d; border-color: #2563eb; }
+  .n-ingestion .node-title { color: #60a5fa; }
+  .n-db        { background: #1a1a1a; border-color: #475569; }
+  .n-db        .node-title { color: #cbd5e1; }
+  .n-ext       { background: #1c1010; border-color: #dc2626; }
+  .n-ext       .node-title { color: #f87171; }
+  .n-eval      { background: #1c1500; border-color: #d97706; }
+  .n-eval      .node-title { color: #fcd34d; }
+
+  /* ── arrows ── */
+  .arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    color: #334155;
+    font-size: 22px;
+    position: relative;
+  }
+  .arrow-label {
+    position: absolute;
+    right: calc(50% - 120px);
+    font-size: 10px;
+    color: #475569;
+    font-family: "SF Mono", monospace;
+    white-space: nowrap;
+  }
+  .arrow-h {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    color: #334155;
+    font-size: 18px;
+  }
+
+  /* ── ONLINE flow layout ── */
+  .flow-section { margin-bottom: 56px; }
+
+  .flow-main {
+    display: grid;
+    grid-template-columns: 1fr 60px 1fr;
+    gap: 0;
+    align-items: start;
+  }
+
+  .flow-center {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .flow-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .flow-right {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .side-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #334155;
+    margin-bottom: 8px;
+  }
+
+  /* ── OFFLINE flow ── */
+  .offline-flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 56px;
+    flex-wrap: nowrap;
+  }
+  .offline-flow .node { min-width: 160px; flex: 1; }
+  .offline-flow .arr  { flex: 0 0 40px; text-align: center; color: #334155; font-size: 20px; }
+
+  /* ── dependency map ── */
+  .dep-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 56px;
+  }
+  .dep-card {
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+    padding: 16px 18px;
+    background: #0f172a;
+  }
+  .dep-card .dep-name {
+    font-size: 12px;
+    font-weight: 700;
+    font-family: monospace;
+    margin-bottom: 10px;
+  }
+  .dep-card .dep-calls {
+    font-size: 11px;
+    color: #64748b;
+    line-height: 2;
+  }
+  .dep-card .dep-calls span {
+    display: inline-block;
+    background: #1e293b;
+    border-radius: 4px;
+    padding: 1px 7px;
+    margin: 1px 2px;
+    font-family: monospace;
+    color: #94a3b8;
+  }
+
+  /* ── env var table ── */
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th {
+    text-align: left;
+    padding: 10px 14px;
+    background: #0f172a;
+    color: #475569;
+    font-size: 10px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    border-bottom: 1px solid #1e293b;
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #1e293b;
+    vertical-align: top;
+    color: #cbd5e1;
+  }
+  td:first-child { font-family: monospace; color: #fbbf24; font-size: 11px; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #0f172a; }
+
+  /* ── divider ── */
+  .divider { border: none; border-top: 1px solid #1e293b; margin: 48px 0; }
+
+  /* ── legend ── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 40px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    color: #64748b;
+  }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+  }
+</style>
+</head>
+<body>
+
+<h1>FDA RAG — System Architecture</h1>
+<p class="subtitle">How every component connects and the order things run &nbsp;·&nbsp; <span style="color:#4ade80">Weeks 1–5 complete</span></p>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- LEGEND -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#2dd4bf"></div> UI (Streamlit)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div> API (FastAPI)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#a78bfa"></div> Agent (LangGraph)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#4ade80"></div> Retrieval</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#60a5fa"></div> Ingestion</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#cbd5e1"></div> Database (Neon — Postgres 16 + pgvector)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f87171"></div> External API</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#fcd34d"></div> Eval (RAGAS)</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- TWO PATHS -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<p class="section-label">The two separate lifetimes</p>
+<div class="paths">
+  <div class="path-card offline">
+    <h2>① Offline — Ingestion</h2>
+    <p>Runs <strong>once</strong> (or when new FDA data arrives). Parses XML files,
+    chunks the text, generates embeddings, and stores everything in Postgres.
+    This must finish before anyone can ask a question.</p>
+    <span class="trigger">Triggered manually via scripts/</span>
+  </div>
+  <div class="path-card online">
+    <h2>② Online — Query</h2>
+    <p>Runs on <strong>every user question</strong>. Embeds the question, searches
+    Postgres for relevant chunks, reranks them, then calls Claude to write a
+    grounded, cited answer.</p>
+    <span class="trigger">Triggered by user typing in the UI</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- OFFLINE FLOW -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<p class="section-label">Offline path — step by step</p>
+<div class="offline-flow">
+
+  <div class="node n-ingestion">
+    <div class="node-title">① Download</div>
+    <div class="node-sub">DailyMed FTP → raw XML files</div>
+    <div class="node-file">scripts/download_dailymed.py</div>
+  </div>
+  <div class="arr">→</div>
+
+  <div class="node n-ingestion">
+    <div class="node-title">② Parse</div>
+    <div class="node-sub">Extract label sections from XML</div>
+    <div class="node-file">fda_rag/ingestion/</div>
+  </div>
+  <div class="arr">→</div>
+
+  <div class="node n-ingestion">
+    <div class="node-title">③ Chunk</div>
+    <div class="node-sub">Split sections into ~512-token windows</div>
+    <div class="node-file">fda_rag/ingestion/</div>
+  </div>
+  <div class="arr">→</div>
+
+  <div class="node n-ext">
+    <div class="node-title">④ Embed</div>
+    <div class="node-sub">Voyage AI → float[1024] per chunk</div>
+    <div class="node-file">Voyage AI API</div>
+  </div>
+  <div class="arr">→</div>
+
+  <div class="node n-db">
+    <div class="node-title">⑤ Store</div>
+    <div class="node-sub">INSERT (text, embedding) into Postgres</div>
+    <div class="node-file">Neon — Postgres 16 + pgvector</div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- ONLINE FLOW -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<p class="section-label">Online path — step by step</p>
+<div class="flow-section">
+<div style="display:flex; gap:32px; align-items:flex-start;">
+
+  <!-- LEFT COLUMN: main request path -->
+  <div style="flex:1; display:flex; flex-direction:column; gap:0;">
+
+    <div class="node n-ui">
+      <div class="node-title">① User types a question</div>
+      <div class="node-sub">Streamlit web app — the chat interface</div>
+      <div class="node-file">src/fda_rag/ui/</div>
+    </div>
+    <div class="arrow">↓<span class="arrow-label">HTTP POST /query</span></div>
+
+    <div class="node n-api">
+      <div class="node-title">② FastAPI receives the request</div>
+      <div class="node-sub">Validates the input, calls the agent, formats the response</div>
+      <div class="node-file">src/fda_rag/api/</div>
+    </div>
+    <div class="arrow">↓<span class="arrow-label">agent.run(question)</span></div>
+
+    <div class="node n-agent">
+      <div class="node-title">③ LangGraph agent orchestrates</div>
+      <div class="node-sub">
+        Runs a two-node graph:<br>
+        <strong style="color:#c4b5fd">retrieve</strong> →
+        <strong style="color:#c4b5fd">generate</strong>
+      </div>
+      <div class="node-file">src/fda_rag/agent/</div>
+    </div>
+    <div class="arrow">↓<span class="arrow-label">search(question)</span></div>
+
+    <div class="node n-retrieval">
+      <div class="node-title">④ Retrieval — find relevant chunks</div>
+      <div class="node-sub">
+        Embeds the question → vector search (pgvector) + keyword search (BM25)
+        → merge results → Voyage AI reranker → top 8 chunks
+      </div>
+      <div class="node-file">src/fda_rag/retrieval/</div>
+    </div>
+    <div class="arrow">↓<span class="arrow-label">SELECT … ORDER BY emb &lt;=&gt; query_vec</span></div>
+
+    <div class="node n-db">
+      <div class="node-title">⑤ Neon (Postgres + pgvector) returns chunks</div>
+      <div class="node-sub">Nearest-neighbour search over millions of stored embeddings</div>
+      <div class="node-file">neon.tech → DATABASE_URL in .env</div>
+    </div>
+    <div class="arrow">↓<span class="arrow-label">chunks flow back up to agent</span></div>
+
+    <div class="node n-agent" style="border-color:#9333ea;">
+      <div class="node-title">⑥ Agent calls Gemini to generate answer</div>
+      <div class="node-sub">
+        Prompt = system instructions + retrieved chunks + user question<br>
+        Gemini writes the answer and cites which chunks it used
+      </div>
+      <div class="node-file">Google Gemini API (via fda_rag/agent/)</div>
+    </div>
+    <div class="arrow">↓<span class="arrow-label">{ answer, sources }</span></div>
+
+    <div class="node n-ui">
+      <div class="node-title">⑦ Answer displayed to user</div>
+      <div class="node-sub">Streamlit renders answer text + source citations</div>
+      <div class="node-file">src/fda_rag/ui/</div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT COLUMN: side services -->
+  <div style="flex:0 0 260px; display:flex; flex-direction:column; gap:12px; padding-top:8px;">
+
+    <div class="side-label">External services (called during online path)</div>
+
+    <div class="node n-ext">
+      <div class="node-title">Voyage AI — embed</div>
+      <div class="node-sub">Called in step ④ to embed the user's question into a vector</div>
+      <div class="node-file">VOYAGE_API_KEY</div>
+    </div>
+
+    <div class="node n-ext">
+      <div class="node-title">Voyage AI — rerank</div>
+      <div class="node-sub">Called in step ④ to re-score merged search results by relevance</div>
+      <div class="node-file">VOYAGE_API_KEY</div>
+    </div>
+
+    <div class="node n-ext">
+      <div class="node-title">Google — Gemini</div>
+      <div class="node-sub">Called in step ⑥ to generate the final answer from retrieved chunks</div>
+      <div class="node-file">GEMINI_API_KEY</div>
+    </div>
+
+    <div class="node n-ext" style="border-color:#475569; background:#0f1a0f;">
+      <div class="node-title" style="color:#86efac;">LangSmith (passive)</div>
+      <div class="node-sub">
+        Runs silently alongside every agent call. Logs all node inputs/outputs
+        so you can debug traces at smith.langchain.com
+      </div>
+      <div class="node-file">LANGSMITH_API_KEY</div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- EVAL PATH -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<hr class="divider" />
+<p class="section-label">Eval path — runs on demand, never in production</p>
+<div style="display:flex; gap:0; align-items:center; margin-bottom:56px; max-width:800px;">
+  <div class="node n-eval" style="flex:1;">
+    <div class="node-title">Test questions + expected answers</div>
+    <div class="node-sub">A curated dataset of Q&A pairs with gold-standard context</div>
+    <div class="node-file">tests/ or data/eval/</div>
+  </div>
+  <div style="padding:0 12px; color:#334155; font-size:20px;">→</div>
+  <div class="node n-agent" style="flex:1;">
+    <div class="node-title">Run the full agent</div>
+    <div class="node-sub">Same online path as above — retrieval + generation</div>
+    <div class="node-file">fda_rag/agent/</div>
+  </div>
+  <div style="padding:0 12px; color:#334155; font-size:20px;">→</div>
+  <div class="node n-eval" style="flex:1;">
+    <div class="node-title">RAGAS scores the output</div>
+    <div class="node-sub">Faithfulness · Context precision · Context recall</div>
+    <div class="node-file">fda_rag/eval/</div>
+  </div>
+  <div style="padding:0 12px; color:#334155; font-size:20px;">→</div>
+  <div class="node n-eval" style="flex:1;">
+    <div class="node-title">Metrics report</div>
+    <div class="node-sub">Did a change improve or regress quality?</div>
+    <div class="node-file">make eval</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- DEPENDENCY MAP -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<hr class="divider" />
+<p class="section-label">What each layer imports / calls</p>
+<div class="dep-grid">
+
+  <div class="dep-card">
+    <div class="dep-name" style="color:#2dd4bf;">ui/</div>
+    <div class="dep-calls">
+      Does NOT import other subpackages.<br>
+      Calls <span>api/</span> over HTTP only.<br>
+      This means you can run the UI and API on separate machines.
+    </div>
+  </div>
+
+  <div class="dep-card">
+    <div class="dep-name" style="color:#fbbf24;">api/</div>
+    <div class="dep-calls">
+      Imports <span>agent/</span><br>
+      Exposes HTTP endpoints that the UI calls.
+    </div>
+  </div>
+
+  <div class="dep-card">
+    <div class="dep-name" style="color:#a78bfa;">agent/</div>
+    <div class="dep-calls">
+      Imports <span>retrieval/</span><br>
+      Calls <span>Google Gemini API</span> (external)<br>
+      Logged by <span>LangSmith</span> (passive)
+    </div>
+  </div>
+
+  <div class="dep-card">
+    <div class="dep-name" style="color:#4ade80;">retrieval/</div>
+    <div class="dep-calls">
+      Calls <span>Voyage AI API</span> (embed + rerank)<br>
+      Queries <span>Postgres</span> via psycopg<br>
+      Does NOT import agent/ or api/
+    </div>
+  </div>
+
+  <div class="dep-card">
+    <div class="dep-name" style="color:#60a5fa;">ingestion/</div>
+    <div class="dep-calls">
+      Calls <span>Voyage AI API</span> (embed chunks)<br>
+      Writes to <span>Postgres</span> via psycopg<br>
+      Completely separate from the online path
+    </div>
+  </div>
+
+  <div class="dep-card">
+    <div class="dep-name" style="color:#fcd34d;">eval/</div>
+    <div class="dep-calls">
+      Imports <span>agent/</span> (runs it)<br>
+      Uses <span>RAGAS</span> (external library)<br>
+      Never called in production
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- ENV VAR TABLE -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<hr class="divider" />
+<p class="section-label">Where each environment variable is used</p>
+<table>
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>Used by</th>
+      <th>When it's needed</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>DATABASE_URL</td>
+      <td>ingestion/, retrieval/, tests/</td>
+      <td>Offline (writing chunks) + Online (querying chunks) + smoke test</td>
+    </tr>
+    <tr>
+      <td>VOYAGE_API_KEY</td>
+      <td>ingestion/ + retrieval/</td>
+      <td>Offline (embed chunks) + Online (embed question + rerank results)</td>
+    </tr>
+    <tr>
+      <td>GEMINI_API_KEY</td>
+      <td>agent/ — generate node</td>
+      <td>Online only — called once per user question to generate the answer</td>
+    </tr>
+    <tr>
+      <td>LANGSMITH_API_KEY</td>
+      <td>LangSmith SDK (auto-detected)</td>
+      <td>Online — every agent call is traced if LANGCHAIN_TRACING_V2=true</td>
+    </tr>
+    <tr>
+      <td>LANGSMITH_PROJECT</td>
+      <td>LangSmith SDK</td>
+      <td>Groups all traces under one named project in the dashboard</td>
+    </tr>
+    <tr>
+      <td>LANGCHAIN_TRACING_V2</td>
+      <td>LangSmith SDK</td>
+      <td>Set to <code>true</code> to turn tracing on; <code>false</code> to run silently</td>
+    </tr>
+  </tbody>
+</table>
+
+</body>
+</html>

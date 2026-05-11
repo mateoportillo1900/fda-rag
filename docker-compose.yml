@@ -1,0 +1,34 @@
+# ── LOCAL DEVELOPMENT ONLY — OPTIONAL ────────────────────────────────────────
+#
+# This file is for developers who have Docker Desktop installed and want a
+# fully local Postgres setup instead of a cloud database (Neon).
+#
+# If you are using Neon (the default for this project), ignore this file.
+# Your DATABASE_URL in .env already points to Neon — nothing to start here.
+#
+# To use this instead:
+#   1. Run: docker compose up -d --wait
+#   2. Change DATABASE_URL in .env to: postgresql://fda_rag:fda_rag@localhost:5432/fda_rag
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: fda_rag
+      POSTGRES_PASSWORD: fda_rag
+      POSTGRES_DB: fda_rag
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fda_rag -d fda_rag"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  postgres_data:
