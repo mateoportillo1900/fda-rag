@@ -33,7 +33,7 @@ def retrieve_node(state: AgentState, config: RunnableConfig) -> dict:
 def generate_node(state: AgentState) -> dict:
     """Generate an answer from retrieved chunks.
 
-    Uses Gemini if GEMINI_API_KEY is set and functional, otherwise returns
+    Uses Groq if GROQ_API_KEY is set and functional, otherwise returns
     a structured plain-text summary of the retrieved chunks for development.
     """
     chunks = state["chunks"]
