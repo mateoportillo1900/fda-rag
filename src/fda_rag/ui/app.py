@@ -106,7 +106,10 @@ st.markdown("""
     border-radius: 20px; padding: 3px 10px; font-size: 11px; color: #94a3b8; margin: 2px;
   }
 
-  #MainMenu, footer, header { visibility: hidden; }
+  #MainMenu, footer { visibility: hidden; }
+  /* Keep header visible so sidebar toggle button works */
+  header { visibility: visible; }
+  header[data-testid="stHeader"] { background: transparent; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -122,7 +125,7 @@ st.markdown("""
     <span class="badge badge-blue">Voyage AI · Semantic Search</span>
     <span class="badge badge-green">pgvector · Neon Postgres</span>
     <span class="badge badge-purple">LangGraph · Agent</span>
-    <span class="badge badge-yellow">Google Gemini · LLM</span>
+    <span class="badge badge-yellow">Groq · Llama 3.3 70B</span>
     <span class="badge badge-red">10 FDA Drug Labels</span>
   </div>
 </div>
@@ -149,7 +152,7 @@ st.markdown("""
   <div class="step">
     <div class="step-num">✍️</div>
     <div class="step-title">4. Cited answer</div>
-    <div class="step-desc">Gemini reads the passages and writes a cited answer — only from source text</div>
+    <div class="step-desc">Llama 3.3 reads the passages and writes a cited answer — only from source text</div>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -262,7 +265,7 @@ with st.sidebar:
 | Embed | Voyage AI |
 | Rerank | Voyage AI |
 | Agent | LangGraph |
-| LLM | Gemini |
+| LLM | Groq / Llama 3.3 |
 | UI | Streamlit |
 """)
 
