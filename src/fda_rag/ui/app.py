@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent.parent.parent.parent / ".env")
 
 try:
-    for key in ("DATABASE_URL", "VOYAGE_API_KEY", "GEMINI_API_KEY"):
+    for key in ("DATABASE_URL", "VOYAGE_API_KEY", "GROQ_API_KEY"):
         if key in st.secrets and not os.environ.get(key):
             os.environ[key] = st.secrets[key]
 except Exception:

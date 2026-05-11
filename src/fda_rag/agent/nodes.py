@@ -5,8 +5,7 @@ from __future__ import annotations
 import os
 
 import psycopg
-from google import genai
-from google.genai import types
+from groq import Groq
 from langchain_core.runnables import RunnableConfig
 
 from fda_rag.agent.prompts import SYSTEM_PROMPT, build_user_prompt
@@ -14,7 +13,7 @@ from fda_rag.agent.state import AgentState
 from fda_rag.retrieval.reranker import rerank
 from fda_rag.retrieval.retriever import retrieve
 
-GEMINI_MODEL = "gemini-2.0-flash"
+GROQ_MODEL = "llama-3.3-70b-versatile"
 RETRIEVAL_TOP_K = 20   # candidates fetched from vector DB
 RERANK_TOP_N = 5       # chunks passed to the LLM after reranking
 
@@ -40,20 +39,21 @@ def generate_node(state: AgentState) -> dict:
     chunks = state["chunks"]
     question = state["question"]
 
-    gemini_key = os.environ.get("GEMINI_API_KEY", "")
-    if gemini_key and not gemini_key.startswith("AIza..."):
+    groq_key = os.environ.get("GROQ_API_KEY", "")
+    if groq_key:
         try:
-            client = genai.Client(api_key=gemini_key)
+            client = Groq(api_key=groq_key)
             user_prompt = build_user_prompt(question, chunks)
-            response = client.models.generate_content(
-                model=GEMINI_MODEL,
-                config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
-                contents=user_prompt,
+            response = client.chat.completions.create(
+                model=GROQ_MODEL,
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": user_prompt},
+                ],
             )
-            return {"answer": response.text}
+            return {"answer": response.choices[0].message.content}
         except Exception as e:
-            # Surface the real error so it can be debugged
-            return {"answer": f"⚠️ Gemini error ({GEMINI_MODEL}): {e}\n\nFalling back to raw retrieved chunks:\n\n" + _format_chunks(chunks, question)}
+            return {"answer": f"⚠️ Groq error ({GROQ_MODEL}): {e}\n\nFalling back to raw retrieved chunks:\n\n" + _format_chunks(chunks, question)}
 
     # No API key configured — return raw chunks
     return {"answer": _format_chunks(chunks, question)}
