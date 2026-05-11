@@ -20,6 +20,34 @@ except Exception:
 
 from fda_rag.agent.graph import build_graph  # noqa: E402
 
+# ── constants ─────────────────────────────────────────────────────────────────
+DRUGS = [
+    "Metformin", "Warfarin", "Atorvastatin", "Sertraline", "Semaglutide",
+    "Adalimumab", "Amoxicillin", "Prednisone", "Naloxone", "Pembrolizumab",
+]
+
+SECTION_META = {
+    "boxed warning":      ("🚨", "#991b1b"),
+    "warnings":           ("⚠️", "#dc2626"),
+    "contraindications":  ("🚫", "#ea580c"),
+    "dosage":             ("💊", "#2563eb"),
+    "adverse":            ("⚡", "#d97706"),
+    "drug interactions":  ("🔄", "#7c3aed"),
+    "indications":        ("✅", "#16a34a"),
+    "description":        ("📋", "#0891b2"),
+    "pharmacology":       ("🔬", "#0d9488"),
+    "clinical":           ("🏥", "#6366f1"),
+}
+
+
+def section_style(section_name: str) -> tuple[str, str]:
+    sl = section_name.lower()
+    for key, (icon, color) in SECTION_META.items():
+        if key in sl:
+            return icon, color
+    return "📄", "#3b82f6"
+
+
 # ── page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="FDA Drug Label Assistant",
@@ -61,13 +89,17 @@ st.markdown("""
 
   .source-card {
     background: #1a1f2e; border: 1px solid #2d3748;
-    border-left: 3px solid #3b82f6; border-radius: 8px;
-    padding: 12px 16px; margin-bottom: 8px;
+    border-radius: 8px; padding: 12px 16px; margin-bottom: 8px;
   }
-  .source-drug    { font-size: 13px; font-weight: 700; color: #60a5fa; }
-  .source-section { font-size: 11px; color: #64748b; margin-bottom: 6px; }
-  .source-excerpt { font-size: 12px; color: #94a3b8; line-height: 1.5; }
-  .source-score   { font-size: 10px; color: #475569; float: right; }
+  .source-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+  .source-icon   { font-size: 16px; }
+  .source-drug   { font-size: 13px; font-weight: 700; color: #f1f5f9; }
+  .source-section-badge {
+    font-size: 10px; font-weight: 600; padding: 2px 8px;
+    border-radius: 10px; border: 1px solid; margin-left: auto;
+  }
+  .source-excerpt { font-size: 12px; color: #94a3b8; line-height: 1.6; }
+  .source-score   { font-size: 10px; color: #475569; margin-top: 6px; }
 
   .drug-pill {
     display: inline-block; background: #1e2433; border: 1px solid #2d3748;
@@ -133,15 +165,26 @@ def render_sources(sources: list) -> None:
             section = getattr(src, "section_name", src["section_name"] if isinstance(src, dict) else "")
             text    = getattr(src, "chunk_text",   src["chunk_text"]   if isinstance(src, dict) else "")
             score   = getattr(src, "score",        src["score"]        if isinstance(src, dict) else 0)
-            excerpt = text[:350] + ("..." if len(text) > 350 else "")
+            excerpt = text[:400] + ("…" if len(text) > 400 else "")
+            icon, color = section_style(section)
             st.markdown(f"""
-<div class="source-card">
-  <span class="source-score">relevance: {score:.2f}</span>
-  <div class="source-drug">[{i}] {drug}</div>
-  <div class="source-section">{section}</div>
+<div class="source-card" style="border-left: 3px solid {color}">
+  <div class="source-header">
+    <span class="source-icon">{icon}</span>
+    <span class="source-drug">[{i}] {drug}</span>
+    <span class="source-section-badge" style="color:{color}; border-color:{color}; background:{color}22">{section}</span>
+  </div>
   <div class="source-excerpt">{excerpt}</div>
+  <div class="source-score">relevance score: {score:.3f}</div>
 </div>
 """, unsafe_allow_html=True)
+
+
+def run_query(question: str) -> tuple[str, list]:
+    result = st.session_state.agent.invoke(
+        {"question": question, "chunks": [], "answer": ""}
+    )
+    return result["answer"], result["chunks"]
 
 
 # ── sidebar ────────────────────────────────────────────────────────────────────
@@ -163,6 +206,41 @@ with st.sidebar:
 """, unsafe_allow_html=True)
 
     st.divider()
+
+    # ── drug filter / autocomplete ─────────────────────────────────────────
+    st.markdown("### 🔍 Filter by Drug")
+    selected_drug = st.selectbox(
+        "Focus answers on one drug",
+        ["All drugs"] + DRUGS,
+        index=0,
+        label_visibility="collapsed",
+    )
+    if selected_drug != "All drugs":
+        st.caption(f"Questions will be focused on **{selected_drug}**")
+
+    st.divider()
+
+    # ── compare two drugs ──────────────────────────────────────────────────
+    st.markdown("### ⚖️ Compare Two Drugs")
+    drug_a = st.selectbox("Drug A", DRUGS, index=0, key="drug_a")
+    drug_b = st.selectbox("Drug B", DRUGS, index=1, key="drug_b")
+    compare_topic = st.selectbox(
+        "Compare by",
+        ["interactions", "warnings", "contraindications", "side effects", "dosage"],
+        key="compare_topic",
+    )
+    if st.button("⚖️ Compare", use_container_width=True):
+        if drug_a == drug_b:
+            st.warning("Please pick two different drugs.")
+        else:
+            st.session_state["prefill"] = (
+                f"Compare {drug_a} and {drug_b} — what are the key differences "
+                f"in their {compare_topic}?"
+            )
+
+    st.divider()
+
+    # ── example questions ──────────────────────────────────────────────────
     st.markdown("### 💡 Try asking")
     examples = [
         "What are the contraindications for warfarin?",
@@ -209,28 +287,36 @@ if "agent" not in st.session_state:
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
+        if msg["role"] == "assistant" and msg.get("content"):
+            with st.expander("📋 Copy answer", expanded=False):
+                st.code(msg["content"], language="text")
         if msg.get("sources"):
             render_sources(msg["sources"])
 
 # ── handle input ──────────────────────────────────────────────────────────────
-prefill  = st.session_state.pop("prefill", None)
-question = st.chat_input("Ask about any FDA drug label…") or prefill
+prefill   = st.session_state.pop("prefill", None)
+raw_input = st.chat_input("Ask about any FDA drug label…") or prefill
+
+# Apply drug filter prefix if a specific drug is selected
+if raw_input and selected_drug != "All drugs":
+    question = f"[Focus only on {selected_drug}] {raw_input}"
+else:
+    question = raw_input
 
 if question:
-    st.session_state.messages.append({"role": "user", "content": question, "sources": []})
+    display_question = raw_input or question
+    st.session_state.messages.append({"role": "user", "content": display_question, "sources": []})
     with st.chat_message("user"):
-        st.markdown(question)
+        st.markdown(display_question)
 
     with st.chat_message("assistant"):
         with st.spinner("Searching FDA drug labels…"):
             try:
-                result  = st.session_state.agent.invoke(
-                    {"question": question, "chunks": [], "answer": ""}
-                )
-                answer  = result["answer"]
-                sources = result["chunks"]
+                answer, sources = run_query(question)
 
                 st.markdown(answer)
+                with st.expander("📋 Copy answer", expanded=False):
+                    st.code(answer, language="text")
                 render_sources(sources)
 
                 st.session_state.messages.append(
