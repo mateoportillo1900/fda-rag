@@ -14,7 +14,7 @@ from fda_rag.agent.state import AgentState
 from fda_rag.retrieval.reranker import rerank
 from fda_rag.retrieval.retriever import retrieve
 
-GEMINI_MODEL = "gemini-1.5-flash"
+GEMINI_MODEL = "gemini-2.0-flash"
 RETRIEVAL_TOP_K = 20   # candidates fetched from vector DB
 RERANK_TOP_N = 5       # chunks passed to the LLM after reranking
 
@@ -51,16 +51,20 @@ def generate_node(state: AgentState) -> dict:
                 contents=user_prompt,
             )
             return {"answer": response.text}
-        except Exception:
-            pass  # fall through to stub
+        except Exception as e:
+            # Surface the real error so it can be debugged
+            return {"answer": f"⚠️ Gemini error ({GEMINI_MODEL}): {e}\n\nFalling back to raw retrieved chunks:\n\n" + _format_chunks(chunks, question)}
 
-    # Development stub — returns retrieved chunks as structured text
+    # No API key configured — return raw chunks
+    return {"answer": _format_chunks(chunks, question)}
+
+
+def _format_chunks(chunks: list, question: str) -> str:
     if not chunks:
-        return {"answer": "No relevant drug label excerpts found for your question."}
-
+        return "No relevant drug label excerpts found for your question."
     lines = [f"Retrieved {len(chunks)} chunk(s) relevant to: {question!r}\n"]
     for i, chunk in enumerate(chunks, 1):
         lines.append(f"[{i}] {chunk.drug_name} — {chunk.section_name}")
         lines.append(chunk.chunk_text[:300] + ("..." if len(chunk.chunk_text) > 300 else ""))
         lines.append("")
-    return {"answer": "\n".join(lines)}
+    return "\n".join(lines)
