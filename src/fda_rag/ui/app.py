@@ -270,6 +270,27 @@ with st.sidebar:
 """)
 
     st.divider()
+
+    # ── known limitations ──────────────────────────────────────────────────
+    st.markdown("### ⚠️ Known Limitations")
+    st.markdown("""
+**Drug coverage**
+Only 10 of the thousands of FDA-approved drugs are in this database. Questions about any other drug will return irrelevant results.
+
+**Data freshness**
+Labels were downloaded in May 2026. Drug labels are updated periodically — this app may not reflect the latest revisions.
+
+**Answer quality**
+The AI can only answer from the 5 passages retrieved. If the relevant section wasn't retrieved, the answer will be incomplete or incorrect.
+
+**Not medical advice**
+This tool is for educational purposes only. Never make clinical decisions based on this app. Always consult the official [DailyMed](https://dailymed.nlm.nih.gov) label and a qualified healthcare provider.
+
+**Rate limits**
+Built on free-tier APIs. Under heavy usage, responses may slow down or temporarily fail.
+""")
+
+    st.divider()
     if st.button("🗑️ Clear conversation", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
