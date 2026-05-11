@@ -8,7 +8,7 @@
 
 > Ask plain-English questions about FDA-approved drug labels and get cited, grounded answers — no hallucination.
 
-**[🚀 Live Demo →](https://your-app.streamlit.app)** *(link coming after deployment)*
+**[🚀 Live Demo →](https://mateoportillo1900-fda-rag-src-fda-rag-ui-app.streamlit.app)**
 
 ---
 
@@ -21,6 +21,7 @@ This project lets you ask questions like:
 - *"What are the contraindications for warfarin?"*
 - *"What drug interactions does atorvastatin have?"*
 - *"What is the recommended dosage for amoxicillin?"*
+- *"Compare metformin and semaglutide interactions"*
 
 ...and get back a specific, cited answer drawn directly from the official FDA label text.
 
@@ -41,7 +42,7 @@ Search 1,000+ label passages for the most similar ones (Neon + pgvector)
 Rerank top results by relevance (Voyage AI reranker)
      │
      ▼
-Feed best passages to an LLM with instructions to cite sources (Google Gemini)
+Feed best passages to an LLM with instructions to cite sources (Groq / Llama 3.3)
      │
      ▼
 Answer + citations displayed in browser (Streamlit)
@@ -60,7 +61,7 @@ This pattern — retrieve relevant context, then generate an answer — is calle
 | Embeddings | [Voyage AI](https://voyageai.com) `voyage-3` | Converts text to vectors for semantic search |
 | Reranker | Voyage AI `rerank-2` | Re-scores search results by true relevance |
 | Agent | [LangGraph](https://langchain-ai.github.io/langgraph/) | Orchestrates the retrieve → generate pipeline |
-| LLM | [Google Gemini](https://ai.google.dev) `gemini-1.5-flash` | Generates cited answers from retrieved passages |
+| LLM | [Groq](https://groq.com) `llama-3.3-70b-versatile` | Generates cited answers from retrieved passages |
 | API | [FastAPI](https://fastapi.tiangolo.com) | HTTP interface wrapping the agent |
 | UI | [Streamlit](https://streamlit.io) | Chat interface in the browser |
 
@@ -99,7 +100,7 @@ fda-rag/
 |---------|-----------|---------|
 | [Neon](https://neon.tech) | neon.tech | Cloud Postgres database |
 | [Voyage AI](https://voyageai.com) | dash.voyageai.com | Embeddings + reranker |
-| [Google AI Studio](https://aistudio.google.com) | aistudio.google.com | Gemini API key (no card needed) |
+| [Groq](https://console.groq.com) | console.groq.com | LLM API (Llama 3.3, free) |
 
 ### Setup
 
@@ -111,26 +112,17 @@ pip install -r requirements.txt
 **2. Copy the environment template and fill in your keys**
 ```bash
 cp .env.example .env
-# Open .env and add your DATABASE_URL, VOYAGE_API_KEY, GEMINI_API_KEY
+# Open .env and add your DATABASE_URL, VOYAGE_API_KEY, GROQ_API_KEY
 ```
 
 **3. Set up the database (run once)**
-```python
-import os, psycopg
-from dotenv import load_dotenv
-load_dotenv()
-with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
-    conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
-    conn.commit()
-```
 ```bash
 python scripts/migrate.py
 ```
 
 **4. Load the drug label data**
 ```bash
-python scripts/download_dailymed.py --sample   # downloads 10 labels
-python scripts/run_ingestion.py                # embeds and stores them
+python scripts/run_ingestion.py
 ```
 
 **5. Run the app**
