@@ -15,6 +15,7 @@ Usage:
 import argparse
 import os
 import sys
+import time
 from pathlib import Path
 
 import psycopg
@@ -26,6 +27,34 @@ from fda_rag.ingestion.chunker import chunk_label
 from fda_rag.ingestion.loader import embed_chunks, store_chunks
 from fda_rag.ingestion.parser import parse_label
 
+# Seconds to wait between files.
+# Must be >= 60 so the previous file's tokens clear Voyage AI's 1-min TPM window.
+INTER_FILE_SLEEP = 65
+
+
+def ingest_one(xml_path: Path, url: str) -> int:
+    """
+    Parse, embed, and store a single XML file.
+    Opens a fresh DB connection per file so Neon serverless idle-timeouts
+    during INTER_FILE_SLEEP never kill an in-flight connection.
+    Returns the number of chunks stored (0 if skipped).
+    """
+    label = parse_label(xml_path)
+    chunks = chunk_label(label)
+
+    if not chunks:
+        print("  no usable sections — skipping\n")
+        return 0
+
+    print(f"  {label.drug_name}: {len(label.sections)} sections -> {len(chunks)} chunks")
+    embeddings = embed_chunks(chunks)
+
+    with psycopg.connect(url) as conn:
+        stored = store_chunks(conn, chunks, embeddings)
+
+    print(f"  stored {stored} rows\n")
+    return stored
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -35,12 +64,25 @@ def main() -> None:
         default=Path("data/sample/xml"),
         help="Directory containing DailyMed XML files (default: data/sample/xml)",
     )
+    parser.add_argument(
+        "--drug",
+        nargs="+",
+        metavar="NAME",
+        help="Ingest only these drug names (filename stems, e.g. --drug warfarin metformin)",
+    )
     args = parser.parse_args()
 
-    xml_files = sorted(args.xml_dir.glob("*.xml"))
+    if args.drug:
+        xml_files = sorted(
+            args.xml_dir / f"{name}.xml"
+            for name in args.drug
+            if (args.xml_dir / f"{name}.xml").exists()
+        )
+    else:
+        xml_files = sorted(args.xml_dir.glob("*.xml"))
+
     if not xml_files:
         print(f"No XML files found in {args.xml_dir}")
-        print("Run: uv run scripts/download_dailymed.py --sample")
         sys.exit(1)
 
     print(f"\nIngesting {len(xml_files)} file(s) from {args.xml_dir}\n")
@@ -49,26 +91,20 @@ def main() -> None:
     total_chunks = 0
     failed: list[str] = []
 
-    with psycopg.connect(url) as conn:
-        for xml_path in xml_files:
-            print(f"{xml_path.name}")
-            try:
-                label = parse_label(xml_path)
-                chunks = chunk_label(label)
+    for i, xml_path in enumerate(xml_files):
+        print(f"{xml_path.name}")
+        try:
+            stored = ingest_one(xml_path, url)
+            total_chunks += stored
+        except Exception as exc:
+            print(f"  ERROR: {exc}\n")
+            failed.append(xml_path.name)
 
-                if not chunks:
-                    print("  no usable sections — skipping\n")
-                    continue
-
-                print(f"  {label.drug_name}: {len(label.sections)} sections -> {len(chunks)} chunks")
-                embeddings = embed_chunks(chunks)
-                stored = store_chunks(conn, chunks, embeddings)
-                total_chunks += stored
-                print(f"  stored {stored} rows\n")
-
-            except Exception as exc:
-                print(f"  ERROR: {exc}\n")
-                failed.append(xml_path.name)
+        # Wait between files: clears Voyage AI TPM window AND avoids RPM limit.
+        # Skip the sleep after the last file.
+        if i < len(xml_files) - 1:
+            print(f"  [waiting {INTER_FILE_SLEEP}s before next file…]\n")
+            time.sleep(INTER_FILE_SLEEP)
 
     print(f"Done. {total_chunks} chunks stored in Neon.")
     if failed:
