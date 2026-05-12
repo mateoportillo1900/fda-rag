@@ -176,61 +176,37 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ── PIPELINE (single HTML block — never wraps) ────────────────────────────────
-st.markdown("""
-<div class="pipe-wrap">
-  <div class="pipe-label">How it works — every question</div>
-  <div style="display:flex;align-items:center;justify-content:center;flex-wrap:nowrap;gap:0;overflow-x:auto;">
+# ── PIPELINE — pure HTML, 2-space indent max (4-space = markdown code block) ──
+_NODE = '<div style="display:flex;flex-direction:column;align-items:center;gap:7px;min-width:90px;">'
+_ARR  = '<div style="color:#1e3a5f;font-size:24px;padding:0 4px;margin-bottom:28px;flex-shrink:0;">&#8250;</div>'
 
-    <div style="display:flex;flex-direction:column;align-items:center;gap:7px;min-width:90px;">
-      <div style="width:52px;height:52px;border-radius:14px;background:#1e1b4b;border:1px solid #4338ca;display:flex;align-items:center;justify-content:center;font-size:22px;">🧑</div>
-      <div style="font-size:11px;font-weight:700;color:#cbd5e1;text-align:center;">Ask</div>
-      <div style="font-size:9px;color:#475569;text-align:center;line-height:1.4;">Your question</div>
-    </div>
+def _node(icon, name, tool, bg, border):
+    return (
+        f'{_NODE}'
+        f'<div style="width:52px;height:52px;border-radius:14px;background:{bg};border:1px solid {border};'
+        f'display:flex;align-items:center;justify-content:center;font-size:22px;">{icon}</div>'
+        f'<div style="font-size:11px;font-weight:700;color:#cbd5e1;text-align:center;">{name}</div>'
+        f'<div style="font-size:9px;color:#475569;text-align:center;line-height:1.4;">{tool}</div>'
+        f'</div>'
+    )
 
-    <div style="color:#1e3a5f;font-size:22px;padding:0 6px;margin-bottom:28px;flex-shrink:0;">›</div>
+_pipeline_nodes = _ARR.join([
+    _node("🧑",  "Ask",      "Your question",   "#1e1b4b", "#4338ca"),
+    _node("🔢",  "Embed",    "Voyage AI<br>voyage-3",    "#082f49", "#1e40af"),
+    _node("🗄️", "Search",   "Neon<br>pgvector",         "#052e16", "#166534"),
+    _node("🎯",  "Rerank",   "Voyage AI<br>rerank-2",   "#1e1b4b", "#4338ca"),
+    _node("🤖",  "Generate", "Groq<br>Llama 3.3 70B",   "#2e1065", "#6d28d9"),
+    _node("💬",  "Answer",   "Cited<br>result",          "#082f49", "#0369a1"),
+])
 
-    <div style="display:flex;flex-direction:column;align-items:center;gap:7px;min-width:90px;">
-      <div style="width:52px;height:52px;border-radius:14px;background:#082f49;border:1px solid #1e40af;display:flex;align-items:center;justify-content:center;font-size:22px;">🔢</div>
-      <div style="font-size:11px;font-weight:700;color:#cbd5e1;text-align:center;">Embed</div>
-      <div style="font-size:9px;color:#475569;text-align:center;line-height:1.4;">Voyage AI<br>voyage-3</div>
-    </div>
-
-    <div style="color:#1e3a5f;font-size:22px;padding:0 6px;margin-bottom:28px;flex-shrink:0;">›</div>
-
-    <div style="display:flex;flex-direction:column;align-items:center;gap:7px;min-width:90px;">
-      <div style="width:52px;height:52px;border-radius:14px;background:#052e16;border:1px solid #166534;display:flex;align-items:center;justify-content:center;font-size:22px;">🗄️</div>
-      <div style="font-size:11px;font-weight:700;color:#cbd5e1;text-align:center;">Search</div>
-      <div style="font-size:9px;color:#475569;text-align:center;line-height:1.4;">Neon<br>pgvector</div>
-    </div>
-
-    <div style="color:#1e3a5f;font-size:22px;padding:0 6px;margin-bottom:28px;flex-shrink:0;">›</div>
-
-    <div style="display:flex;flex-direction:column;align-items:center;gap:7px;min-width:90px;">
-      <div style="width:52px;height:52px;border-radius:14px;background:#1e1b4b;border:1px solid #4338ca;display:flex;align-items:center;justify-content:center;font-size:22px;">🎯</div>
-      <div style="font-size:11px;font-weight:700;color:#cbd5e1;text-align:center;">Rerank</div>
-      <div style="font-size:9px;color:#475569;text-align:center;line-height:1.4;">Voyage AI<br>rerank-2</div>
-    </div>
-
-    <div style="color:#1e3a5f;font-size:22px;padding:0 6px;margin-bottom:28px;flex-shrink:0;">›</div>
-
-    <div style="display:flex;flex-direction:column;align-items:center;gap:7px;min-width:90px;">
-      <div style="width:52px;height:52px;border-radius:14px;background:#2e1065;border:1px solid #6d28d9;display:flex;align-items:center;justify-content:center;font-size:22px;">🤖</div>
-      <div style="font-size:11px;font-weight:700;color:#cbd5e1;text-align:center;">Generate</div>
-      <div style="font-size:9px;color:#475569;text-align:center;line-height:1.4;">Groq<br>Llama 3.3 70B</div>
-    </div>
-
-    <div style="color:#1e3a5f;font-size:22px;padding:0 6px;margin-bottom:28px;flex-shrink:0;">›</div>
-
-    <div style="display:flex;flex-direction:column;align-items:center;gap:7px;min-width:90px;">
-      <div style="width:52px;height:52px;border-radius:14px;background:#082f49;border:1px solid #0369a1;display:flex;align-items:center;justify-content:center;font-size:22px;">💬</div>
-      <div style="font-size:11px;font-weight:700;color:#cbd5e1;text-align:center;">Answer</div>
-      <div style="font-size:9px;color:#475569;text-align:center;line-height:1.4;">Cited<br>result</div>
-    </div>
-
-  </div>
-</div>
-""", unsafe_allow_html=True)
+st.markdown(
+    '<div class="pipe-wrap">'
+    '<div class="pipe-label">How it works — every question</div>'
+    '<div style="display:flex;align-items:center;justify-content:center;flex-wrap:nowrap;gap:0;overflow-x:auto;">'
+    + _pipeline_nodes +
+    '</div></div>',
+    unsafe_allow_html=True,
+)
 
 st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
