@@ -20,7 +20,6 @@ except Exception:
 
 from fda_rag.agent.graph import build_graph  # noqa: E402
 
-# ── constants ─────────────────────────────────────────────────────────────────
 DRUGS = [
     "Metformin", "Warfarin", "Atorvastatin", "Sertraline", "Semaglutide",
     "Adalimumab", "Amoxicillin", "Prednisone", "Naloxone", "Pembrolizumab",
@@ -28,7 +27,7 @@ DRUGS = [
 
 SECTION_META = {
     "boxed warning":      ("🚨", "#ef4444", "#450a0a"),
-    "warnings":           ("⚠️", "#f97316", "#431407"),
+    "warnings":           ("⚠️",  "#f97316", "#431407"),
     "contraindications":  ("🚫", "#fb923c", "#431407"),
     "dosage":             ("💊", "#38bdf8", "#082f49"),
     "adverse":            ("⚡", "#facc15", "#422006"),
@@ -46,7 +45,6 @@ def section_style(section_name: str):
             return icon, color, bg
     return "📄", "#60a5fa", "#172554"
 
-# ── page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="FDA Drug Label Assistant",
     page_icon="💊",
@@ -54,368 +52,190 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── CSS ───────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
 
-  html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
-  .stApp { background: #060910; }
-  .block-container { padding-top: 1.5rem; padding-bottom: 2rem; }
+  .stApp { background: #07090f; }
+  .block-container { padding-top: 2rem; max-width: 1100px; }
   #MainMenu, footer { visibility: hidden; }
-  header { visibility: visible; background: transparent !important; }
   header[data-testid="stHeader"] { background: transparent !important; }
+  [data-testid="stSidebar"] { background: #090c14 !important; border-right: 1px solid #12172a !important; }
 
-  /* ── sidebar ── */
-  [data-testid="stSidebar"] {
-    background: #0a0d14 !important;
-    border-right: 1px solid #1a1f2e !important;
-  }
-  [data-testid="stSidebar"] * { color: #94a3b8; }
-
-  /* ── hero ── */
+  /* hero */
   .hero {
-    background: linear-gradient(135deg, #0f172a 0%, #1a0d2e 40%, #0d1f2d 100%);
-    border: 1px solid #1e293b;
     border-radius: 20px;
-    padding: 2.5rem 3rem;
-    margin-bottom: 1.5rem;
+    padding: 3rem 3rem 2.5rem;
+    margin-bottom: 1rem;
+    background: #0d1021;
+    border: 1px solid #1a2035;
     position: relative;
     overflow: hidden;
   }
-  .hero::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -20%;
-    width: 60%;
-    height: 200%;
-    background: radial-gradient(ellipse, rgba(139,92,246,0.08) 0%, transparent 70%);
+  .hero-glow {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 80% 20%, rgba(124,58,237,0.12) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 60% at 10% 80%, rgba(14,165,233,0.08) 0%, transparent 70%);
     pointer-events: none;
   }
-  .hero::after {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -10%;
-    width: 50%;
-    height: 200%;
-    background: radial-gradient(ellipse, rgba(14,165,233,0.06) 0%, transparent 70%);
-    pointer-events: none;
+  .hero-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(124,58,237,0.15); border: 1px solid rgba(124,58,237,0.35);
+    border-radius: 20px; padding: 5px 14px;
+    font-size: 11px; font-weight: 700; color: #a78bfa;
+    letter-spacing: .05em; text-transform: uppercase;
+    margin-bottom: 18px;
   }
-  .hero-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(139,92,246,0.15);
-    border: 1px solid rgba(139,92,246,0.3);
-    border-radius: 20px;
-    padding: 4px 12px;
-    font-size: 11px;
-    font-weight: 600;
-    color: #a78bfa;
-    letter-spacing: .04em;
-    margin-bottom: 14px;
+  .hero-title {
+    font-size: 3rem; font-weight: 900; line-height: 1.05;
+    color: #f8fafc; margin-bottom: 14px; position: relative;
   }
-  .hero h1 {
-    font-size: 2.4rem;
-    font-weight: 900;
-    line-height: 1.1;
-    margin-bottom: 12px;
-    background: linear-gradient(135deg, #f8fafc 0%, #a78bfa 50%, #38bdf8 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  .hero-title span { color: #8b5cf6; }
+  .hero-desc { font-size: 1rem; color: #475569; line-height: 1.75; margin-bottom: 28px; max-width: 580px; }
+  .hero-metrics { display: flex; gap: 0; margin-bottom: 24px; border: 1px solid #1a2035; border-radius: 12px; overflow: hidden; width: fit-content; }
+  .hmetric { padding: 14px 24px; text-align: center; border-right: 1px solid #1a2035; }
+  .hmetric:last-child { border-right: none; }
+  .hmetric-val { font-size: 1.6rem; font-weight: 900; color: #f1f5f9; line-height: 1; }
+  .hmetric-label { font-size: 9px; color: #334155; text-transform: uppercase; letter-spacing: .08em; margin-top: 5px; }
+  .hero-tags { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .htag { font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 6px; border: 1px solid; }
+  .gh-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.04); border: 1px solid #1e293b;
+    border-radius: 8px; padding: 5px 13px;
+    font-size: 11px; font-weight: 600; color: #94a3b8;
+    text-decoration: none; transition: border-color .2s, color .2s;
   }
-  .hero p {
-    font-size: 1rem;
-    color: #64748b;
-    line-height: 1.7;
-    max-width: 600px;
-    margin-bottom: 20px;
-  }
-  .hero-metrics {
-    display: flex;
-    gap: 24px;
-    flex-wrap: wrap;
-    margin-bottom: 20px;
-  }
-  .metric {
-    display: flex;
-    flex-direction: column;
-  }
-  .metric-val {
-    font-size: 1.6rem;
-    font-weight: 800;
-    color: #f1f5f9;
-    line-height: 1;
-  }
-  .metric-label {
-    font-size: 10px;
-    color: #475569;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    margin-top: 4px;
-  }
-  .metric-divider {
-    width: 1px;
-    background: #1e293b;
-    align-self: stretch;
-  }
-  .hero-badges {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  .hbadge {
-    font-size: 10px;
-    font-weight: 600;
-    padding: 4px 10px;
-    border-radius: 6px;
-    border: 1px solid;
-    letter-spacing: .03em;
-  }
+  .gh-btn:hover { border-color: #334155; color: #e2e8f0; }
 
-  /* ── pipeline steps ── */
-  .pipeline {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
-    gap: 0;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    background: #0a0d14;
-    border: 1px solid #1a1f2e;
-    border-radius: 16px;
-    padding: 20px 24px;
+  /* pipeline */
+  .pipe-wrap {
+    background: #0b0e1a; border: 1px solid #12172a;
+    border-radius: 16px; padding: 20px 28px; margin-bottom: 1rem;
   }
-  .pipe-step {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    padding: 8px;
+  .pipe-label {
+    font-size: 9px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: #1e293b; margin-bottom: 16px;
   }
+  .pipe-row { display: flex; align-items: center; gap: 0; }
+  .pipe-node { display: flex; flex-direction: column; align-items: center; gap: 7px; flex: 1; }
   .pipe-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-  }
-  .pipe-title {
-    font-size: 11px;
-    font-weight: 700;
-    color: #e2e8f0;
-    text-align: center;
-  }
-  .pipe-sub {
-    font-size: 9px;
-    color: #475569;
-    text-align: center;
-    line-height: 1.4;
-  }
-  .pipe-arrow {
-    font-size: 16px;
-    color: #1e293b;
-    padding: 0 4px;
-  }
-
-  /* ── chat messages ── */
-  .chat-user {
-    background: linear-gradient(135deg, #1e1b4b, #1a0d2e);
-    border: 1px solid #312e81;
-    border-radius: 16px 16px 4px 16px;
-    padding: 14px 18px;
-    margin: 8px 0;
-    font-size: 14px;
-    color: #e2e8f0;
-    max-width: 80%;
-    margin-left: auto;
-  }
-  .chat-assistant {
-    background: #0f172a;
-    border: 1px solid #1e293b;
-    border-radius: 4px 16px 16px 16px;
-    padding: 18px 20px;
-    margin: 8px 0;
-    font-size: 14px;
-    color: #cbd5e1;
-    line-height: 1.7;
-  }
-  .chat-label {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-
-  /* ── source cards ── */
-  .src-card {
-    border-radius: 12px;
-    padding: 14px 16px;
-    margin-bottom: 10px;
+    width: 48px; height: 48px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center; font-size: 22px;
     border: 1px solid;
-    position: relative;
-    transition: all .2s;
   }
-  .src-top {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 8px;
-  }
-  .src-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    flex-shrink: 0;
-  }
+  .pipe-name { font-size: 11px; font-weight: 700; color: #cbd5e1; text-align: center; }
+  .pipe-tool { font-size: 9px; color: #334155; text-align: center; line-height: 1.4; }
+  .pipe-arr { color: #1e293b; font-size: 18px; padding: 0 6px; flex-shrink: 0; margin-bottom: 20px; }
+
+  /* source cards */
+  .src { border-radius: 12px; padding: 16px; margin-bottom: 10px; border: 1px solid; }
+  .src-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .src-ico { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
   .src-drug { font-size: 13px; font-weight: 700; color: #f1f5f9; }
-  .src-section {
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    padding: 2px 8px;
-    border-radius: 4px;
-    border: 1px solid;
-    margin-left: auto;
-    white-space: nowrap;
-  }
-  .src-text { font-size: 12px; color: #64748b; line-height: 1.6; }
-  .src-score { font-size: 10px; margin-top: 8px; color: #334155; }
+  .src-tag { font-size: 9px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; border: 1px solid; margin-left: auto; white-space: nowrap; }
+  .src-body { font-size: 12px; color: #4b5563; line-height: 1.65; }
+  .src-score { font-size: 10px; color: #1f2937; margin-top: 8px; }
 
-  /* ── sidebar elements ── */
-  .drug-chip {
-    display: inline-block;
-    background: #0f172a;
-    border: 1px solid #1e293b;
-    border-radius: 6px;
-    padding: 4px 10px;
-    font-size: 11px;
-    color: #64748b;
-    margin: 2px;
-    font-weight: 500;
-  }
-  .sidebar-section {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: #334155;
-    margin: 16px 0 10px;
-  }
-  .limit-item {
-    display: flex;
-    gap: 8px;
-    font-size: 11px;
-    color: #475569;
-    line-height: 1.5;
-    margin-bottom: 10px;
-    align-items: flex-start;
-  }
-  .limit-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #dc2626;
-    margin-top: 5px;
-    flex-shrink: 0;
-  }
+  /* sidebar */
+  .sb-head { font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #1e293b; margin: 20px 0 10px; }
+  .chip { display: inline-block; background: #0f172a; border: 1px solid #1e293b; border-radius: 5px; padding: 3px 9px; font-size: 10px; color: #4b5563; margin: 2px; font-weight: 500; }
+  .lim { display: flex; gap: 8px; font-size: 10px; color: #374151; margin-bottom: 8px; line-height: 1.5; }
+  .lim-dot { width: 5px; height: 5px; border-radius: 50%; background: #7f1d1d; margin-top: 5px; flex-shrink: 0; }
 </style>
 """, unsafe_allow_html=True)
 
-# ── hero ──────────────────────────────────────────────────────────────────────
+# ── HERO ──────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="hero">
-  <div class="hero-tag">⚡ Powered by RAG — Retrieval-Augmented Generation</div>
-  <h1>FDA Drug Label<br>Assistant</h1>
-  <p>Ask plain-English questions about FDA-approved drug labels and get cited,
-  grounded answers — every response traces directly back to official
-  <a href="https://dailymed.nlm.nih.gov" style="color:#60a5fa;text-decoration:none;">DailyMed</a> source text.</p>
-
+  <div class="hero-glow"></div>
+  <div class="hero-pill">⚡ Retrieval-Augmented Generation</div>
+  <div class="hero-title">FDA Drug Label<br><span>Assistant</span></div>
+  <div class="hero-desc">
+    Ask plain-English questions about FDA-approved drug labels.<br>
+    Every answer is grounded in official <a href="https://dailymed.nlm.nih.gov" style="color:#60a5fa;text-decoration:none;">DailyMed</a> source text — zero hallucination.
+  </div>
   <div class="hero-metrics">
-    <div class="metric">
-      <span class="metric-val">10</span>
-      <span class="metric-label">Drug Labels</span>
-    </div>
-    <div class="metric-divider"></div>
-    <div class="metric">
-      <span class="metric-val">53</span>
-      <span class="metric-label">Label Passages</span>
-    </div>
-    <div class="metric-divider"></div>
-    <div class="metric">
-      <span class="metric-val">1024</span>
-      <span class="metric-label">Vector Dimensions</span>
-    </div>
-    <div class="metric-divider"></div>
-    <div class="metric">
-      <span class="metric-val">70B</span>
-      <span class="metric-label">LLM Parameters</span>
-    </div>
+    <div class="hmetric"><div class="hmetric-val">10</div><div class="hmetric-label">Drug Labels</div></div>
+    <div class="hmetric"><div class="hmetric-val">53</div><div class="hmetric-label">Passages</div></div>
+    <div class="hmetric"><div class="hmetric-val">1024</div><div class="hmetric-label">Vector Dims</div></div>
+    <div class="hmetric"><div class="hmetric-val">70B</div><div class="hmetric-label">LLM Params</div></div>
   </div>
-
-  <div class="hero-badges">
-    <span class="hbadge" style="background:#172554;border-color:#1d4ed8;color:#93c5fd;">Voyage AI · Embeddings</span>
-    <span class="hbadge" style="background:#052e16;border-color:#16a34a;color:#86efac;">pgvector · Neon</span>
-    <span class="hbadge" style="background:#2e1065;border-color:#7c3aed;color:#c4b5fd;">LangGraph · Agent</span>
-    <span class="hbadge" style="background:#1c1500;border-color:#d97706;color:#fcd34d;">Groq · Llama 3.3 70B</span>
-    <span class="hbadge" style="background:#0d2626;border-color:#0d9488;color:#5eead4;">Streamlit · UI</span>
+  <div class="hero-tags">
+    <span class="htag" style="background:#172554;border-color:#1d4ed8;color:#93c5fd;">Voyage AI · Embeddings</span>
+    <span class="htag" style="background:#052e16;border-color:#16a34a;color:#86efac;">pgvector · Neon</span>
+    <span class="htag" style="background:#2e1065;border-color:#7c3aed;color:#c4b5fd;">LangGraph · Agent</span>
+    <span class="htag" style="background:#1c1500;border-color:#d97706;color:#fcd34d;">Groq · Llama 3.3 70B</span>
+    <a class="gh-btn" href="https://github.com/mateoportillo1900/fda-rag" target="_blank">
+      <svg height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      View on GitHub
+    </a>
   </div>
 </div>
 """, unsafe_allow_html=True)
 
-# ── pipeline ──────────────────────────────────────────────────────────────────
+# ── PIPELINE (single HTML block — never wraps) ────────────────────────────────
 st.markdown("""
-<div class="pipeline">
-  <div class="pipe-step">
-    <div class="pipe-icon" style="background:#1e1b4b;">🧑</div>
-    <div class="pipe-title">Ask</div>
-    <div class="pipe-sub">Type any drug question</div>
-  </div>
-  <div class="pipe-arrow">→</div>
-  <div class="pipe-step">
-    <div class="pipe-icon" style="background:#082f49;">🔢</div>
-    <div class="pipe-title">Embed</div>
-    <div class="pipe-sub">Voyage AI voyage-3</div>
-  </div>
-  <div class="pipe-arrow">→</div>
-  <div class="pipe-step">
-    <div class="pipe-icon" style="background:#052e16;">🗄️</div>
-    <div class="pipe-title">Search</div>
-    <div class="pipe-sub">pgvector cosine search</div>
-  </div>
-  <div class="pipe-arrow">→</div>
-  <div class="pipe-step">
-    <div class="pipe-icon" style="background:#1e1b4b;">🎯</div>
-    <div class="pipe-title">Rerank</div>
-    <div class="pipe-sub">Voyage AI rerank-2</div>
-  </div>
-  <div class="pipe-arrow">→</div>
-  <div class="pipe-step">
-    <div class="pipe-icon" style="background:#2e1065;">🤖</div>
-    <div class="pipe-title">Generate</div>
-    <div class="pipe-sub">Groq Llama 3.3 70B</div>
-  </div>
-  <div class="pipe-arrow">→</div>
-  <div class="pipe-step">
-    <div class="pipe-icon" style="background:#0d2626;">📄</div>
-    <div class="pipe-title">Cited Answer</div>
-    <div class="pipe-sub">Grounded in source text</div>
+<div class="pipe-wrap">
+  <div class="pipe-label">How it works — every question</div>
+  <div style="display:flex;align-items:center;justify-content:center;flex-wrap:nowrap;gap:0;overflow-x:auto;">
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:7px;min-width:90px;">
+      <div style="width:52px;height:52px;border-radius:14px;background:#1e1b4b;border:1px solid #4338ca;display:flex;align-items:center;justify-content:center;font-size:22px;">🧑</div>
+      <div style="font-size:11px;font-weight:700;color:#cbd5e1;text-align:center;">Ask</div>
+      <div style="font-size:9px;color:#475569;text-align:center;line-height:1.4;">Your question</div>
+    </div>
+
+    <div style="color:#1e3a5f;font-size:22px;padding:0 6px;margin-bottom:28px;flex-shrink:0;">›</div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:7px;min-width:90px;">
+      <div style="width:52px;height:52px;border-radius:14px;background:#082f49;border:1px solid #1e40af;display:flex;align-items:center;justify-content:center;font-size:22px;">🔢</div>
+      <div style="font-size:11px;font-weight:700;color:#cbd5e1;text-align:center;">Embed</div>
+      <div style="font-size:9px;color:#475569;text-align:center;line-height:1.4;">Voyage AI<br>voyage-3</div>
+    </div>
+
+    <div style="color:#1e3a5f;font-size:22px;padding:0 6px;margin-bottom:28px;flex-shrink:0;">›</div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:7px;min-width:90px;">
+      <div style="width:52px;height:52px;border-radius:14px;background:#052e16;border:1px solid #166534;display:flex;align-items:center;justify-content:center;font-size:22px;">🗄️</div>
+      <div style="font-size:11px;font-weight:700;color:#cbd5e1;text-align:center;">Search</div>
+      <div style="font-size:9px;color:#475569;text-align:center;line-height:1.4;">Neon<br>pgvector</div>
+    </div>
+
+    <div style="color:#1e3a5f;font-size:22px;padding:0 6px;margin-bottom:28px;flex-shrink:0;">›</div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:7px;min-width:90px;">
+      <div style="width:52px;height:52px;border-radius:14px;background:#1e1b4b;border:1px solid #4338ca;display:flex;align-items:center;justify-content:center;font-size:22px;">🎯</div>
+      <div style="font-size:11px;font-weight:700;color:#cbd5e1;text-align:center;">Rerank</div>
+      <div style="font-size:9px;color:#475569;text-align:center;line-height:1.4;">Voyage AI<br>rerank-2</div>
+    </div>
+
+    <div style="color:#1e3a5f;font-size:22px;padding:0 6px;margin-bottom:28px;flex-shrink:0;">›</div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:7px;min-width:90px;">
+      <div style="width:52px;height:52px;border-radius:14px;background:#2e1065;border:1px solid #6d28d9;display:flex;align-items:center;justify-content:center;font-size:22px;">🤖</div>
+      <div style="font-size:11px;font-weight:700;color:#cbd5e1;text-align:center;">Generate</div>
+      <div style="font-size:9px;color:#475569;text-align:center;line-height:1.4;">Groq<br>Llama 3.3 70B</div>
+    </div>
+
+    <div style="color:#1e3a5f;font-size:22px;padding:0 6px;margin-bottom:28px;flex-shrink:0;">›</div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:7px;min-width:90px;">
+      <div style="width:52px;height:52px;border-radius:14px;background:#082f49;border:1px solid #0369a1;display:flex;align-items:center;justify-content:center;font-size:22px;">💬</div>
+      <div style="font-size:11px;font-weight:700;color:#cbd5e1;text-align:center;">Answer</div>
+      <div style="font-size:9px;color:#475569;text-align:center;line-height:1.4;">Cited<br>result</div>
+    </div>
+
   </div>
 </div>
 """, unsafe_allow_html=True)
 
+st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
-# ── helpers ───────────────────────────────────────────────────────────────────
+
+# ── HELPERS ───────────────────────────────────────────────────────────────────
 def render_sources(sources: list) -> None:
     if not sources:
         return
@@ -425,149 +245,90 @@ def render_sources(sources: list) -> None:
             section = getattr(src, "section_name", src["section_name"] if isinstance(src, dict) else "")
             text    = getattr(src, "chunk_text",   src["chunk_text"]   if isinstance(src, dict) else "")
             score   = getattr(src, "score",        src["score"]        if isinstance(src, dict) else 0)
-            excerpt = text[:400] + ("…" if len(text) > 400 else "")
+            excerpt = text[:420] + ("…" if len(text) > 420 else "")
             icon, color, bg = section_style(section)
             st.markdown(f"""
-<div class="src-card" style="background:{bg}22;border-color:{color}33;">
-  <div class="src-top">
-    <div class="src-icon" style="background:{bg};color:{color};">{icon}</div>
-    <div>
-      <div class="src-drug">[{i}] {drug}</div>
-    </div>
-    <span class="src-section" style="color:{color};border-color:{color}33;background:{bg};">{section}</span>
+<div class="src" style="background:{bg}18;border-color:{color}25;">
+  <div class="src-head">
+    <div class="src-ico" style="background:{bg};color:{color};">{icon}</div>
+    <div><div class="src-drug">[{i}] {drug}</div></div>
+    <span class="src-tag" style="color:{color};border-color:{color}30;background:{bg};">{section}</span>
   </div>
-  <div class="src-text">{excerpt}</div>
-  <div class="src-score">Relevance score: {score:.3f}</div>
-</div>
-""", unsafe_allow_html=True)
+  <div class="src-body">{excerpt}</div>
+  <div class="src-score">Score: {score:.3f}</div>
+</div>""", unsafe_allow_html=True)
 
 
 def run_query(question: str) -> tuple[str, list]:
-    result = st.session_state.agent.invoke(
-        {"question": question, "chunks": [], "answer": ""}
-    )
+    result = st.session_state.agent.invoke({"question": question, "chunks": [], "answer": ""})
     return result["answer"], result["chunks"]
 
 
-# ── sidebar ────────────────────────────────────────────────────────────────────
+# ── SIDEBAR ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("""
-<div style="padding:4px 0 16px;">
-  <div style="font-size:18px;font-weight:800;color:#f1f5f9;">💊 FDA Assistant</div>
-  <div style="font-size:11px;color:#334155;margin-top:4px;">Drug Label Intelligence</div>
-</div>
-""", unsafe_allow_html=True)
+<div style="padding:8px 0 4px">
+  <div style="font-size:17px;font-weight:800;color:#e2e8f0;">💊 FDA Assistant</div>
+  <div style="font-size:10px;color:#1e293b;margin-top:3px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;">Drug Label Intelligence</div>
+</div>""", unsafe_allow_html=True)
 
-    st.markdown('<div class="sidebar-section">Available Drugs</div>', unsafe_allow_html=True)
-    st.markdown("""
-<div style="margin-bottom:12px;line-height:2.2;">
-  <span class="drug-chip">Metformin</span>
-  <span class="drug-chip">Warfarin</span>
-  <span class="drug-chip">Atorvastatin</span>
-  <span class="drug-chip">Sertraline</span>
-  <span class="drug-chip">Semaglutide</span>
-  <span class="drug-chip">Adalimumab</span>
-  <span class="drug-chip">Amoxicillin</span>
-  <span class="drug-chip">Prednisone</span>
-  <span class="drug-chip">Naloxone</span>
-  <span class="drug-chip">Pembrolizumab</span>
-</div>
-""", unsafe_allow_html=True)
+    st.markdown('<div class="sb-head">Available Drugs</div>', unsafe_allow_html=True)
+    st.markdown('<div>' + ''.join(f'<span class="chip">{d}</span>' for d in DRUGS) + '</div>', unsafe_allow_html=True)
 
     st.divider()
-
-    # ── drug filter ────────────────────────────────────────────────────────
-    st.markdown('<div class="sidebar-section">🔍 Filter by Drug</div>', unsafe_allow_html=True)
-    selected_drug = st.selectbox(
-        "Focus on one drug",
-        ["All drugs"] + DRUGS,
-        index=0,
-        label_visibility="collapsed",
-    )
+    st.markdown('<div class="sb-head">🔍 Filter by Drug</div>', unsafe_allow_html=True)
+    selected_drug = st.selectbox("Drug", ["All drugs"] + DRUGS, index=0, label_visibility="collapsed")
     if selected_drug != "All drugs":
-        st.caption(f"Focusing on **{selected_drug}**")
+        st.caption(f"Focused on **{selected_drug}**")
 
     st.divider()
-
-    # ── compare ────────────────────────────────────────────────────────────
-    st.markdown('<div class="sidebar-section">⚖️ Compare Two Drugs</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sb-head">⚖️ Compare Drugs</div>', unsafe_allow_html=True)
     drug_a = st.selectbox("Drug A", DRUGS, index=0, key="drug_a")
     drug_b = st.selectbox("Drug B", DRUGS, index=1, key="drug_b")
-    compare_topic = st.selectbox(
-        "Topic",
-        ["interactions", "warnings", "contraindications", "side effects", "dosage"],
-        key="compare_topic",
-    )
+    compare_topic = st.selectbox("Topic", ["interactions", "warnings", "contraindications", "side effects", "dosage"], key="compare_topic")
     if st.button("⚖️ Compare", use_container_width=True):
         if drug_a == drug_b:
             st.warning("Pick two different drugs.")
         else:
-            st.session_state["prefill"] = (
-                f"Compare {drug_a} and {drug_b} — what are the key differences "
-                f"in their {compare_topic}?"
-            )
+            st.session_state["prefill"] = f"Compare {drug_a} and {drug_b} — what are the key differences in their {compare_topic}?"
 
     st.divider()
-
-    # ── examples ───────────────────────────────────────────────────────────
-    st.markdown('<div class="sidebar-section">💡 Try These</div>', unsafe_allow_html=True)
-    examples = [
+    st.markdown('<div class="sb-head">💡 Try These</div>', unsafe_allow_html=True)
+    for ex in [
         "What are the contraindications for warfarin?",
         "What drug interactions does atorvastatin have?",
         "What is the dosage for amoxicillin?",
         "What are the warnings for prednisone?",
         "What are the adverse reactions for metformin?",
-    ]
-    for ex in examples:
+    ]:
         if st.button(ex, key=ex, use_container_width=True):
             st.session_state["prefill"] = ex
 
     st.divider()
-
-    # ── stack ──────────────────────────────────────────────────────────────
-    st.markdown('<div class="sidebar-section">⚙️ Stack</div>', unsafe_allow_html=True)
-    st.markdown("""
-| Layer | Tool |
-|-------|------|
-| DB | Neon + pgvector |
-| Embed | Voyage AI |
-| Rerank | Voyage AI |
-| Agent | LangGraph |
-| LLM | Groq / Llama 3.3 |
-| UI | Streamlit |
-""")
-
-    st.divider()
-
-    # ── limitations ────────────────────────────────────────────────────────
-    st.markdown('<div class="sidebar-section">⚠️ Known Limitations</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sb-head">⚠️ Limitations</div>', unsafe_allow_html=True)
     st.markdown("""
 <div>
-  <div class="limit-item"><div class="limit-dot"></div><div><strong style="color:#94a3b8">10 drugs only</strong> — thousands of FDA drugs are not in this database</div></div>
-  <div class="limit-item"><div class="limit-dot"></div><div><strong style="color:#94a3b8">Answer quality</strong> — only as good as the 5 passages retrieved</div></div>
-  <div class="limit-item"><div class="limit-dot"></div><div><strong style="color:#94a3b8">Data freshness</strong> — labels from May 2026, may not reflect recent updates</div></div>
-  <div class="limit-item"><div class="limit-dot"></div><div><strong style="color:#94a3b8">Free tier limits</strong> — may slow under heavy usage</div></div>
-  <div class="limit-item"><div class="limit-dot"></div><div><strong style="color:#94a3b8">Not medical advice</strong> — always consult a healthcare provider</div></div>
-</div>
-""", unsafe_allow_html=True)
+  <div class="lim"><div class="lim-dot"></div><div><b style="color:#6b7280">10 drugs only</b> — not a complete FDA database</div></div>
+  <div class="lim"><div class="lim-dot"></div><div><b style="color:#6b7280">Answer quality</b> — limited to 5 retrieved passages</div></div>
+  <div class="lim"><div class="lim-dot"></div><div><b style="color:#6b7280">Not medical advice</b> — consult a healthcare provider</div></div>
+  <div class="lim"><div class="lim-dot"></div><div><b style="color:#6b7280">Free tier APIs</b> — may slow under heavy load</div></div>
+</div>""", unsafe_allow_html=True)
 
     st.divider()
     if st.button("🗑️ Clear conversation", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
-
     st.caption("Data: [DailyMed](https://dailymed.nlm.nih.gov) · Educational use only")
 
 
-# ── session state ─────────────────────────────────────────────────────────────
+# ── SESSION STATE ─────────────────────────────────────────────────────────────
 if "messages" not in st.session_state:
     st.session_state.messages = []
-
 if "agent" not in st.session_state:
-    with st.spinner("Initialising agent…"):
+    with st.spinner("Initialising…"):
         st.session_state.agent = build_graph()
 
-# ── chat history ──────────────────────────────────────────────────────────────
+# ── CHAT HISTORY ──────────────────────────────────────────────────────────────
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
@@ -577,14 +338,10 @@ for msg in st.session_state.messages:
         if msg.get("sources"):
             render_sources(msg["sources"])
 
-# ── input ─────────────────────────────────────────────────────────────────────
+# ── INPUT ─────────────────────────────────────────────────────────────────────
 prefill   = st.session_state.pop("prefill", None)
 raw_input = st.chat_input("Ask anything about an FDA drug label…") or prefill
-
-if raw_input and selected_drug != "All drugs":
-    question = f"[Focus only on {selected_drug}] {raw_input}"
-else:
-    question = raw_input
+question  = f"[Focus only on {selected_drug}] {raw_input}" if (raw_input and selected_drug != "All drugs") else raw_input
 
 if question:
     display_question = raw_input or question
@@ -600,12 +357,8 @@ if question:
                 with st.expander("📋 Copy answer", expanded=False):
                     st.code(answer, language="text")
                 render_sources(sources)
-                st.session_state.messages.append(
-                    {"role": "assistant", "content": answer, "sources": sources}
-                )
+                st.session_state.messages.append({"role": "assistant", "content": answer, "sources": sources})
             except Exception as exc:
-                error_msg = f"⚠️ Something went wrong: {exc}"
-                st.error(error_msg)
-                st.session_state.messages.append(
-                    {"role": "assistant", "content": error_msg, "sources": []}
-                )
+                err = f"⚠️ Something went wrong: {exc}"
+                st.error(err)
+                st.session_state.messages.append({"role": "assistant", "content": err, "sources": []})
