@@ -21,9 +21,24 @@ except Exception:
 from fda_rag.agent.graph import build_graph  # noqa: E402
 
 DRUGS = [
+    # Original 10
     "Metformin", "Warfarin", "Atorvastatin", "Sertraline", "Semaglutide",
     "Adalimumab", "Amoxicillin", "Prednisone", "Naloxone", "Pembrolizumab",
+    # Added 10
+    "Lisinopril", "Levothyroxine", "Amlodipine", "Omeprazole", "Albuterol",
+    "Gabapentin", "Escitalopram", "Azithromycin", "Apixaban", "Metoprolol",
 ]
+
+DRUG_CATEGORIES = {
+    "Diabetes / GLP-1":     ["Metformin", "Semaglutide"],
+    "Cardiovascular":        ["Warfarin", "Atorvastatin", "Lisinopril", "Amlodipine", "Apixaban", "Metoprolol"],
+    "Mental Health":         ["Sertraline", "Escitalopram"],
+    "Immunology / Biologic": ["Adalimumab", "Pembrolizumab", "Prednisone"],
+    "Antibiotics":           ["Amoxicillin", "Azithromycin"],
+    "Neurology / Pain":      ["Gabapentin", "Naloxone"],
+    "GI / Metabolic":        ["Omeprazole", "Levothyroxine"],
+    "Respiratory":           ["Albuterol"],
+}
 
 SECTION_META = {
     "boxed warning":      ("🚨", "#ef4444", "#450a0a"),
@@ -158,8 +173,8 @@ st.markdown("""
     Every answer is grounded in official <a href="https://dailymed.nlm.nih.gov" style="color:#60a5fa;text-decoration:none;">DailyMed</a> source text — zero hallucination.
   </div>
   <div class="hero-metrics">
-    <div class="hmetric"><div class="hmetric-val">10</div><div class="hmetric-label">Drug Labels</div></div>
-    <div class="hmetric"><div class="hmetric-val">53</div><div class="hmetric-label">Passages</div></div>
+    <div class="hmetric"><div class="hmetric-val">20</div><div class="hmetric-label">Drug Labels</div></div>
+    <div class="hmetric"><div class="hmetric-val">100+</div><div class="hmetric-label">Passages</div></div>
     <div class="hmetric"><div class="hmetric-val">1024</div><div class="hmetric-label">Vector Dims</div></div>
     <div class="hmetric"><div class="hmetric-val">70B</div><div class="hmetric-label">LLM Params</div></div>
   </div>
@@ -245,47 +260,76 @@ with st.sidebar:
     st.markdown("""
 <div style="padding:8px 0 4px">
   <div style="font-size:17px;font-weight:800;color:#e2e8f0;">💊 FDA Assistant</div>
-  <div style="font-size:10px;color:#1e293b;margin-top:3px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;">Drug Label Intelligence</div>
+  <div style="font-size:10px;color:#334155;margin-top:3px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;">Drug Label Intelligence</div>
 </div>""", unsafe_allow_html=True)
 
-    st.markdown('<div class="sb-head">Available Drugs</div>', unsafe_allow_html=True)
-    st.markdown('<div>' + ''.join(f'<span class="chip">{d}</span>' for d in DRUGS) + '</div>', unsafe_allow_html=True)
+    # ── Drug categories
+    st.markdown('<div class="sb-head">📂 Drug Categories</div>', unsafe_allow_html=True)
+    for cat, members in DRUG_CATEGORIES.items():
+        st.markdown(
+            f'<div style="font-size:10px;color:#475569;font-weight:600;margin:8px 0 4px;">{cat}</div>'
+            + '<div>' + ''.join(f'<span class="chip">{d}</span>' for d in members) + '</div>',
+            unsafe_allow_html=True,
+        )
 
     st.divider()
-    st.markdown('<div class="sb-head">🔍 Filter by Drug</div>', unsafe_allow_html=True)
-    selected_drug = st.selectbox("Drug", ["All drugs"] + DRUGS, index=0, label_visibility="collapsed")
-    if selected_drug != "All drugs":
-        st.caption(f"Focused on **{selected_drug}**")
+
+    # ── Scope filter (multiselect — lets user narrow to 1 or more drugs)
+    st.markdown('<div class="sb-head">🔍 Scope Answers To</div>', unsafe_allow_html=True)
+    st.caption("Leave blank to search all 20 drugs")
+    selected_drugs = st.multiselect(
+        "Drugs",
+        DRUGS,
+        default=[],
+        placeholder="All 20 drugs",
+        label_visibility="collapsed",
+    )
 
     st.divider()
-    st.markdown('<div class="sb-head">⚖️ Compare Drugs</div>', unsafe_allow_html=True)
+
+    # ── Compare two drugs
+    st.markdown('<div class="sb-head">⚖️ Compare Two Drugs</div>', unsafe_allow_html=True)
     drug_a = st.selectbox("Drug A", DRUGS, index=0, key="drug_a")
     drug_b = st.selectbox("Drug B", DRUGS, index=1, key="drug_b")
-    compare_topic = st.selectbox("Topic", ["interactions", "warnings", "contraindications", "side effects", "dosage"], key="compare_topic")
+    compare_topic = st.selectbox(
+        "Topic",
+        ["interactions", "warnings", "contraindications", "side effects", "dosage", "mechanism of action"],
+        key="compare_topic",
+    )
     if st.button("⚖️ Compare", use_container_width=True):
         if drug_a == drug_b:
-            st.warning("Pick two different drugs.")
+            st.warning("Select two different drugs.")
         else:
-            st.session_state["prefill"] = f"Compare {drug_a} and {drug_b} — what are the key differences in their {compare_topic}?"
+            st.session_state["prefill"] = (
+                f"Compare {drug_a} and {drug_b} — "
+                f"what are the key differences in their {compare_topic}?"
+            )
 
     st.divider()
-    st.markdown('<div class="sb-head">💡 Try These</div>', unsafe_allow_html=True)
-    for ex in [
+
+    # ── Example questions
+    st.markdown('<div class="sb-head">💡 Example Questions</div>', unsafe_allow_html=True)
+    examples = [
         "What are the contraindications for warfarin?",
         "What drug interactions does atorvastatin have?",
         "What is the dosage for amoxicillin?",
-        "What are the warnings for prednisone?",
+        "What are the warnings for lisinopril?",
+        "What are the side effects of gabapentin?",
+        "How does apixaban work?",
         "What are the adverse reactions for metformin?",
-    ]:
+    ]
+    for ex in examples:
         if st.button(ex, key=ex, use_container_width=True):
             st.session_state["prefill"] = ex
 
     st.divider()
+
+    # ── Limitations
     st.markdown('<div class="sb-head">⚠️ Limitations</div>', unsafe_allow_html=True)
     st.markdown("""
 <div>
-  <div class="lim"><div class="lim-dot"></div><div><b style="color:#6b7280">10 drugs only</b> — not a complete FDA database</div></div>
-  <div class="lim"><div class="lim-dot"></div><div><b style="color:#6b7280">Answer quality</b> — limited to 5 retrieved passages</div></div>
+  <div class="lim"><div class="lim-dot"></div><div><b style="color:#6b7280">20 drugs only</b> — not a complete FDA database</div></div>
+  <div class="lim"><div class="lim-dot"></div><div><b style="color:#6b7280">Top 5 passages</b> — answer quality limited by retrieval</div></div>
   <div class="lim"><div class="lim-dot"></div><div><b style="color:#6b7280">Not medical advice</b> — consult a healthcare provider</div></div>
   <div class="lim"><div class="lim-dot"></div><div><b style="color:#6b7280">Free tier APIs</b> — may slow under heavy load</div></div>
 </div>""", unsafe_allow_html=True)
@@ -317,7 +361,11 @@ for msg in st.session_state.messages:
 # ── INPUT ─────────────────────────────────────────────────────────────────────
 prefill   = st.session_state.pop("prefill", None)
 raw_input = st.chat_input("Ask anything about an FDA drug label…") or prefill
-question  = f"[Focus only on {selected_drug}] {raw_input}" if (raw_input and selected_drug != "All drugs") else raw_input
+if raw_input and selected_drugs:
+    scope = " and ".join(selected_drugs)
+    question = f"[Focus only on {scope}] {raw_input}"
+else:
+    question = raw_input
 
 if question:
     display_question = raw_input or question
