@@ -174,7 +174,7 @@ st.markdown("""
   </div>
   <div class="hero-metrics">
     <div class="hmetric"><div class="hmetric-val">20</div><div class="hmetric-label">Drug Labels</div></div>
-    <div class="hmetric"><div class="hmetric-val">100+</div><div class="hmetric-label">Passages</div></div>
+    <div class="hmetric"><div class="hmetric-val">735</div><div class="hmetric-label">Passages</div></div>
     <div class="hmetric"><div class="hmetric-val">1024</div><div class="hmetric-label">Vector Dims</div></div>
     <div class="hmetric"><div class="hmetric-val">70B</div><div class="hmetric-label">LLM Params</div></div>
   </div>
