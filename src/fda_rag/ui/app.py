@@ -191,36 +191,31 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ── PIPELINE — space-evenly so all 6 nodes always fit, no overflow/clipping ──
-_ARR = '<div style="color:#1e3a5f;font-size:20px;flex-shrink:0;margin-bottom:22px;padding:0 2px;">&#8250;</div>'
-
-def _node(icon, name, tool, bg, border):
-    return (
-        '<div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;min-width:0;">'
-        f'<div style="width:44px;height:44px;border-radius:12px;background:{bg};border:1px solid {border};'
-        f'display:flex;align-items:center;justify-content:center;font-size:19px;">{icon}</div>'
-        f'<div style="font-size:10px;font-weight:700;color:#cbd5e1;text-align:center;white-space:nowrap;">{name}</div>'
-        f'<div style="font-size:8px;color:#475569;text-align:center;line-height:1.3;">{tool}</div>'
-        '</div>'
-    )
-
-_pipeline_nodes = _ARR.join([
-    _node("🧑",  "Ask",      "Your question",    "#1e1b4b", "#4338ca"),
-    _node("🔢",  "Embed",    "Voyage AI",         "#082f49", "#1e40af"),
-    _node("🗄️", "Search",   "Neon pgvector",     "#052e16", "#166534"),
-    _node("🎯",  "Rerank",   "Voyage AI",         "#1e1b4b", "#4338ca"),
-    _node("🤖",  "Generate", "Groq LLaMA 3.3",   "#2e1065", "#6d28d9"),
-    _node("💬",  "Answer",   "Cited result",      "#082f49", "#0369a1"),
-])
-
-st.markdown(
-    '<div class="pipe-wrap">'
-    '<div class="pipe-label">How it works — every question</div>'
-    '<div style="display:flex;align-items:center;justify-content:space-evenly;flex-wrap:nowrap;width:100%;">'
-    + _pipeline_nodes +
-    '</div></div>',
-    unsafe_allow_html=True,
-)
+st.markdown("""
+<div class="pipe-wrap">
+<div class="pipe-label">How it works</div>
+<p style="font-size:13px;color:#94a3b8;line-height:1.8;margin:0 0 16px 0;">
+This app uses <b style="color:#e2e8f0;">Retrieval-Augmented Generation (RAG)</b> — a technique that grounds
+AI answers in real source documents rather than relying on memorized training data.
+Instead of asking a general-purpose LLM to recall drug information from memory,
+every answer is pulled directly from the official <b style="color:#e2e8f0;">FDA-approved drug labels</b>
+published on DailyMed.
+</p>
+<p style="font-size:13px;color:#94a3b8;line-height:1.8;margin:0 0 16px 0;">
+When you ask a question, it is converted into a vector embedding using
+<b style="color:#93c5fd;">Voyage AI</b> and matched against 735 indexed passages from 20 drug labels
+stored in a <b style="color:#86efac;">Neon Postgres database</b> with pgvector.
+The top 20 matches are then re-scored by a Voyage AI reranker to surface the
+5 most relevant passages. Those passages — along with your question — are sent
+to <b style="color:#c4b5fd;">Groq's Llama 3.3 70B</b> with instructions to answer only from what the
+labels say and to cite every claim.
+</p>
+<p style="font-size:13px;color:#475569;line-height:1.8;margin:0;">
+The retrieve-then-generate pipeline is orchestrated by a
+<b style="color:#fcd34d;">LangGraph</b> state graph, making the flow auditable and easy to extend.
+</p>
+</div>
+""", unsafe_allow_html=True)
 
 st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
