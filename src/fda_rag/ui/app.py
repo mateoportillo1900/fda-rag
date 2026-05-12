@@ -64,7 +64,7 @@ st.set_page_config(
     page_title="FDA Drug Label Assistant",
     page_icon="💊",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",  # collapsed by default on mobile
 )
 
 st.markdown("""
@@ -159,6 +159,38 @@ st.markdown("""
   .chip { display: inline-block; background: #0f172a; border: 1px solid #1e293b; border-radius: 5px; padding: 3px 9px; font-size: 10px; color: #4b5563; margin: 2px; font-weight: 500; }
   .lim { display: flex; gap: 8px; font-size: 10px; color: #374151; margin-bottom: 8px; line-height: 1.5; }
   .lim-dot { width: 5px; height: 5px; border-radius: 50%; background: #7f1d1d; margin-top: 5px; flex-shrink: 0; }
+
+  /* ── mobile ── */
+  @media (max-width: 768px) {
+    .block-container { padding: 1rem 0.75rem !important; }
+
+    .hero { padding: 1.5rem 1.25rem 1.25rem; border-radius: 14px; }
+    .hero-title { font-size: 2rem; }
+    .hero-desc { font-size: 0.875rem; margin-bottom: 18px; }
+    .hero-pill { font-size: 10px; padding: 4px 10px; margin-bottom: 12px; }
+
+    .hero-metrics {
+      width: 100% !important;
+      display: grid !important;
+      grid-template-columns: 1fr 1fr;
+    }
+    .hmetric { padding: 10px 8px; }
+    .hmetric-val { font-size: 1.3rem; }
+    .hmetric:nth-child(2) { border-right: none; }
+
+    .hero-tags { gap: 4px; }
+    .htag { font-size: 9px; padding: 3px 8px; }
+    .gh-btn { font-size: 10px; padding: 4px 10px; }
+
+    .pipe-wrap { padding: 16px 14px; border-radius: 12px; }
+    .pipe-wrap p { font-size: 12px !important; }
+
+    .src { padding: 12px; }
+    .src-head { gap: 8px; }
+    .src-drug { font-size: 12px; }
+    .src-tag { font-size: 8px; }
+    .src-body { font-size: 11px; }
+  }
 </style>
 """, unsafe_allow_html=True)
 
