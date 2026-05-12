@@ -12,6 +12,7 @@ _Q = f"{{{HL7_NS}}}"  # shorthand: _Q + "tag" == "{urn:hl7-org:v3}tag"
 # LOINC codes for the sections we care about.
 # Keys are the codes that appear in <code code="..."/> attributes.
 SECTION_CODES: dict[str, str] = {
+    "34066-1": "BOXED WARNING",
     "34067-9": "INDICATIONS AND USAGE",
     "34068-7": "DOSAGE AND ADMINISTRATION",
     "34070-3": "CONTRAINDICATIONS",
@@ -20,6 +21,9 @@ SECTION_CODES: dict[str, str] = {
     "34084-4": "ADVERSE REACTIONS",
     "34073-7": "DRUG INTERACTIONS",
     "34090-1": "CLINICAL PHARMACOLOGY",
+    "34088-5": "OVERDOSAGE",
+    "34089-3": "DESCRIPTION",
+    "43684-0": "USE IN SPECIFIC POPULATIONS",
 }
 
 
@@ -72,10 +76,34 @@ def _get_set_id(root: ET.Element) -> str:
     return elem.get("root", "") if elem is not None else ""
 
 
+def _section_text(section: ET.Element) -> str:
+    """
+    Extract text from a section element.
+    If the direct <text> child is empty/missing, fall back to collecting text
+    from all descendant <text> elements (covers XML that nests content in
+    child sub-sections rather than directly under the parent section).
+    """
+    text_elem = section.find(f"{_Q}text")
+    if text_elem is not None:
+        txt = _extract_text(text_elem)
+        if len(txt) >= 50:
+            return txt
+
+    # Fallback: gather text from all descendant <text> elements
+    parts: list[str] = []
+    for te in section.findall(f".//{_Q}text"):
+        fragment = _extract_text(te)
+        if fragment:
+            parts.append(fragment)
+    return " ".join(parts)
+
+
 def parse_label(path: Path) -> ParsedLabel:
     """
     Parse a DailyMed SPL XML file.
     Returns a ParsedLabel containing only the sections defined in SECTION_CODES.
+    Handles both flat (text directly on section) and nested (text in child
+    sub-sections) XML layouts used by different drug label publishers.
     """
     tree = ET.parse(path)
     root = tree.getroot()
@@ -85,6 +113,8 @@ def parse_label(path: Path) -> ParsedLabel:
         set_id=_get_set_id(root),
     )
 
+    seen_codes: set[str] = set()  # deduplicate: one entry per LOINC code
+
     for section in root.findall(f".//{_Q}section"):
         code_elem = section.find(f"{_Q}code")
         if code_elem is None:
@@ -93,15 +123,14 @@ def parse_label(path: Path) -> ParsedLabel:
         code = code_elem.get("code", "")
         if code not in SECTION_CODES:
             continue
+        if code in seen_codes:
+            continue  # only take the first (outermost) occurrence
 
-        text_elem = section.find(f"{_Q}text")
-        if text_elem is None:
-            continue
-
-        text = _extract_text(text_elem)
+        text = _section_text(section)
         if len(text) < 50:  # skip near-empty sections
             continue
 
+        seen_codes.add(code)
         label.sections.append(
             ParsedSection(code=code, name=SECTION_CODES[code], text=text)
         )
