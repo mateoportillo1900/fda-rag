@@ -191,33 +191,32 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ── PIPELINE — pure HTML, 2-space indent max (4-space = markdown code block) ──
-_NODE = '<div style="display:flex;flex-direction:column;align-items:center;gap:7px;min-width:90px;">'
-_ARR  = '<div style="color:#1e3a5f;font-size:24px;padding:0 4px;margin-bottom:28px;flex-shrink:0;">&#8250;</div>'
+# ── PIPELINE — space-evenly so all 6 nodes always fit, no overflow/clipping ──
+_ARR = '<div style="color:#1e3a5f;font-size:20px;flex-shrink:0;margin-bottom:22px;padding:0 2px;">&#8250;</div>'
 
 def _node(icon, name, tool, bg, border):
     return (
-        f'{_NODE}'
-        f'<div style="width:52px;height:52px;border-radius:14px;background:{bg};border:1px solid {border};'
-        f'display:flex;align-items:center;justify-content:center;font-size:22px;">{icon}</div>'
-        f'<div style="font-size:11px;font-weight:700;color:#cbd5e1;text-align:center;">{name}</div>'
-        f'<div style="font-size:9px;color:#475569;text-align:center;line-height:1.4;">{tool}</div>'
-        f'</div>'
+        '<div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;min-width:0;">'
+        f'<div style="width:44px;height:44px;border-radius:12px;background:{bg};border:1px solid {border};'
+        f'display:flex;align-items:center;justify-content:center;font-size:19px;">{icon}</div>'
+        f'<div style="font-size:10px;font-weight:700;color:#cbd5e1;text-align:center;white-space:nowrap;">{name}</div>'
+        f'<div style="font-size:8px;color:#475569;text-align:center;line-height:1.3;">{tool}</div>'
+        '</div>'
     )
 
 _pipeline_nodes = _ARR.join([
-    _node("🧑",  "Ask",      "Your question",   "#1e1b4b", "#4338ca"),
-    _node("🔢",  "Embed",    "Voyage AI<br>voyage-3",    "#082f49", "#1e40af"),
-    _node("🗄️", "Search",   "Neon<br>pgvector",         "#052e16", "#166534"),
-    _node("🎯",  "Rerank",   "Voyage AI<br>rerank-2",   "#1e1b4b", "#4338ca"),
-    _node("🤖",  "Generate", "Groq<br>Llama 3.3 70B",   "#2e1065", "#6d28d9"),
-    _node("💬",  "Answer",   "Cited<br>result",          "#082f49", "#0369a1"),
+    _node("🧑",  "Ask",      "Your question",    "#1e1b4b", "#4338ca"),
+    _node("🔢",  "Embed",    "Voyage AI",         "#082f49", "#1e40af"),
+    _node("🗄️", "Search",   "Neon pgvector",     "#052e16", "#166534"),
+    _node("🎯",  "Rerank",   "Voyage AI",         "#1e1b4b", "#4338ca"),
+    _node("🤖",  "Generate", "Groq LLaMA 3.3",   "#2e1065", "#6d28d9"),
+    _node("💬",  "Answer",   "Cited result",      "#082f49", "#0369a1"),
 ])
 
 st.markdown(
     '<div class="pipe-wrap">'
     '<div class="pipe-label">How it works — every question</div>'
-    '<div style="display:flex;align-items:center;justify-content:center;flex-wrap:nowrap;gap:0;overflow-x:auto;">'
+    '<div style="display:flex;align-items:center;justify-content:space-evenly;flex-wrap:nowrap;width:100%;">'
     + _pipeline_nodes +
     '</div></div>',
     unsafe_allow_html=True,
