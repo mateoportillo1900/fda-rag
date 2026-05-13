@@ -80,9 +80,9 @@ st.markdown("""
 
   /* hero */
   .hero {
-    border-radius: 20px;
-    padding: 3rem 3rem 2.5rem;
-    margin-bottom: 1rem;
+    border-radius: 18px;
+    padding: 2rem 2.25rem 1.75rem;
+    margin-bottom: 0.75rem;
     background: #0d1021;
     border: 1px solid #1a2035;
     position: relative;
@@ -98,22 +98,22 @@ st.markdown("""
   .hero-pill {
     display: inline-flex; align-items: center; gap: 6px;
     background: rgba(124,58,237,0.15); border: 1px solid rgba(124,58,237,0.35);
-    border-radius: 20px; padding: 5px 14px;
-    font-size: 11px; font-weight: 700; color: #a78bfa;
+    border-radius: 20px; padding: 4px 12px;
+    font-size: 10px; font-weight: 700; color: #a78bfa;
     letter-spacing: .05em; text-transform: uppercase;
-    margin-bottom: 18px;
+    margin-bottom: 12px;
   }
   .hero-title {
-    font-size: 3rem; font-weight: 900; line-height: 1.05;
-    color: #f8fafc; margin-bottom: 14px; position: relative;
+    font-size: 2.25rem; font-weight: 900; line-height: 1.05;
+    color: #f8fafc; margin-bottom: 10px; position: relative;
   }
   .hero-title span { color: #8b5cf6; }
-  .hero-desc { font-size: 1rem; color: #475569; line-height: 1.75; margin-bottom: 28px; max-width: 580px; }
-  .hero-metrics { display: flex; gap: 0; margin-bottom: 24px; border: 1px solid #1a2035; border-radius: 12px; overflow: hidden; width: fit-content; }
-  .hmetric { padding: 14px 24px; text-align: center; border-right: 1px solid #1a2035; }
+  .hero-desc { font-size: 0.9rem; color: #475569; line-height: 1.6; margin-bottom: 18px; max-width: 580px; }
+  .hero-metrics { display: flex; gap: 0; margin-bottom: 16px; border: 1px solid #1a2035; border-radius: 10px; overflow: hidden; width: fit-content; }
+  .hmetric { padding: 10px 18px; text-align: center; border-right: 1px solid #1a2035; }
   .hmetric:last-child { border-right: none; }
-  .hmetric-val { font-size: 1.6rem; font-weight: 900; color: #f1f5f9; line-height: 1; }
-  .hmetric-label { font-size: 9px; color: #334155; text-transform: uppercase; letter-spacing: .08em; margin-top: 5px; }
+  .hmetric-val { font-size: 1.35rem; font-weight: 900; color: #f1f5f9; line-height: 1; }
+  .hmetric-label { font-size: 9px; color: #334155; text-transform: uppercase; letter-spacing: .08em; margin-top: 4px; }
   .hero-tags { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
   .htag { font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 6px; border: 1px solid; }
   .gh-btn {
@@ -128,11 +128,11 @@ st.markdown("""
   /* pipeline */
   .pipe-wrap {
     background: #0b0e1a; border: 1px solid #12172a;
-    border-radius: 16px; padding: 20px 28px; margin-bottom: 1rem;
+    border-radius: 14px; padding: 14px 20px; margin-bottom: 0.75rem;
   }
   .pipe-label {
     font-size: 9px; font-weight: 700; letter-spacing: .12em;
-    text-transform: uppercase; color: #1e293b; margin-bottom: 16px;
+    text-transform: uppercase; color: #1e293b; margin-bottom: 10px;
   }
   .pipe-row { display: flex; align-items: center; gap: 0; }
   .pipe-node { display: flex; flex-direction: column; align-items: center; gap: 7px; flex: 1; }
@@ -226,30 +226,17 @@ st.markdown("""
 st.markdown("""
 <div class="pipe-wrap">
 <div class="pipe-label">How it works</div>
-<p style="font-size:13px;color:#94a3b8;line-height:1.8;margin:0 0 16px 0;">
-This app uses <b style="color:#e2e8f0;">Retrieval-Augmented Generation (RAG)</b> — a technique that grounds
-AI answers in real source documents rather than relying on memorized training data.
-Instead of asking a general-purpose LLM to recall drug information from memory,
-every answer is pulled directly from the official <b style="color:#e2e8f0;">FDA-approved drug labels</b>
-published on DailyMed.
+<p style="font-size:12.5px;color:#94a3b8;line-height:1.65;margin:0 0 10px 0;">
+This app uses <b style="color:#e2e8f0;">Retrieval-Augmented Generation (RAG)</b> to ground every answer in
+real FDA-approved drug labels from DailyMed — no memorized training data, no hallucinations.
 </p>
-<p style="font-size:13px;color:#94a3b8;line-height:1.8;margin:0 0 16px 0;">
-When you ask a question, it is converted into a vector embedding using
-<b style="color:#93c5fd;">Voyage AI</b> and matched against 735 indexed passages from 20 drug labels
-stored in a <b style="color:#86efac;">Neon Postgres database</b> with pgvector.
-The top 20 matches are then re-scored by a Voyage AI reranker to surface the
-5 most relevant passages. Those passages — along with your question — are sent
-to <b style="color:#c4b5fd;">Groq's Llama 3.3 70B</b> with instructions to answer only from what the
-labels say and to cite every claim.
-</p>
-<p style="font-size:13px;color:#475569;line-height:1.8;margin:0;">
-The retrieve-then-generate pipeline is orchestrated by a
-<b style="color:#fcd34d;">LangGraph</b> state graph, making the flow auditable and easy to extend.
+<p style="font-size:12.5px;color:#94a3b8;line-height:1.65;margin:0 0 10px 0;">
+Your question is embedded by <b style="color:#93c5fd;">Voyage AI</b>, matched against 735 indexed passages in
+<b style="color:#86efac;">Neon Postgres</b> with pgvector, reranked, and sent to <b style="color:#c4b5fd;">Groq Llama 3.3 70B</b> with
+strict instructions to cite every claim — orchestrated by a <b style="color:#fcd34d;">LangGraph</b> agent.
 </p>
 </div>
 """, unsafe_allow_html=True)
-
-st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
 
 # ── HELPERS ───────────────────────────────────────────────────────────────────
