@@ -80,9 +80,9 @@ st.markdown("""
 
   /* hero */
   .hero {
-    border-radius: 18px;
-    padding: 2rem 2.25rem 1.75rem;
-    margin-bottom: 0.75rem;
+    border-radius: 16px;
+    padding: 1.5rem 1.75rem 1.25rem;
+    margin-bottom: 0.6rem;
     background: #0d1021;
     border: 1px solid #1a2035;
     position: relative;
@@ -98,24 +98,25 @@ st.markdown("""
   .hero-pill {
     display: inline-flex; align-items: center; gap: 6px;
     background: rgba(124,58,237,0.15); border: 1px solid rgba(124,58,237,0.35);
-    border-radius: 20px; padding: 4px 12px;
+    border-radius: 20px; padding: 3px 11px;
     font-size: 10px; font-weight: 700; color: #a78bfa;
     letter-spacing: .05em; text-transform: uppercase;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
   }
   .hero-title {
-    font-size: 2.25rem; font-weight: 900; line-height: 1.05;
-    color: #f8fafc; margin-bottom: 10px; position: relative;
+    font-size: 1.85rem; font-weight: 900; line-height: 1.1;
+    color: #f8fafc; margin-bottom: 8px; position: relative;
+    white-space: nowrap;
   }
   .hero-title span { color: #8b5cf6; }
-  .hero-desc { font-size: 0.95rem; color: #94a3b8; line-height: 1.6; margin-bottom: 18px; max-width: 600px; }
+  .hero-desc { font-size: 0.9rem; color: #94a3b8; line-height: 1.55; margin-bottom: 14px; max-width: 640px; }
   .hero-desc a { color: #60a5fa; text-decoration: none; }
   .hero-desc a:visited { color: #60a5fa; }
-  .hero-metrics { display: flex; gap: 0; margin-bottom: 16px; border: 1px solid #1e293b; border-radius: 10px; overflow: hidden; width: fit-content; }
-  .hmetric { padding: 10px 20px; text-align: center; border-right: 1px solid #1e293b; }
+  .hero-metrics { display: flex; gap: 0; margin-bottom: 12px; border: 1px solid #1e293b; border-radius: 10px; overflow: hidden; width: fit-content; }
+  .hmetric { padding: 8px 16px; text-align: center; border-right: 1px solid #1e293b; }
   .hmetric:last-child { border-right: none; }
-  .hmetric-val { font-size: 1.4rem; font-weight: 900; color: #f1f5f9; line-height: 1; }
-  .hmetric-label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: .08em; margin-top: 5px; font-weight: 600; }
+  .hmetric-val { font-size: 1.2rem; font-weight: 900; color: #f1f5f9; line-height: 1; }
+  .hmetric-label { font-size: 9px; color: #64748b; text-transform: uppercase; letter-spacing: .08em; margin-top: 4px; font-weight: 600; }
   .hero-tags { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
   .htag { font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 6px; border: 1px solid; }
   .gh-btn {
@@ -130,7 +131,7 @@ st.markdown("""
   /* pipeline */
   .pipe-wrap {
     background: #0b0e1a; border: 1px solid #1e293b;
-    border-radius: 14px; padding: 18px 22px; margin-bottom: 0.75rem;
+    border-radius: 14px; padding: 14px 18px; margin-bottom: 0.6rem;
   }
   .pipe-label {
     font-size: 10px; font-weight: 700; letter-spacing: .12em;
@@ -166,8 +167,8 @@ st.markdown("""
   @media (max-width: 768px) {
     .block-container { padding: 1rem 0.75rem !important; }
 
-    .hero { padding: 1.5rem 1.25rem 1.25rem; border-radius: 14px; }
-    .hero-title { font-size: 2rem; }
+    .hero { padding: 1.25rem 1.1rem 1rem; border-radius: 14px; }
+    .hero-title { font-size: 1.5rem; white-space: normal; }
     .hero-desc { font-size: 0.875rem; margin-bottom: 18px; }
     .hero-pill { font-size: 10px; padding: 4px 10px; margin-bottom: 12px; }
 
@@ -201,7 +202,7 @@ st.markdown("""
 <div class="hero">
   <div class="hero-glow"></div>
   <div class="hero-pill">⚡ Retrieval-Augmented Generation</div>
-  <div class="hero-title">FDA Drug Label<br><span>Assistant</span></div>
+  <div class="hero-title">FDA Drug Label <span>Assistant</span></div>
   <div class="hero-desc">
     Ask plain-English questions about FDA-approved drug labels. Every answer is grounded in official <a href="https://dailymed.nlm.nih.gov" target="_blank">DailyMed</a> source text — zero hallucination.
   </div>
