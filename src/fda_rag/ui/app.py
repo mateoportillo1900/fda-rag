@@ -271,37 +271,28 @@ def run_query(question: str) -> tuple[str, list]:
 # ── SIDEBAR ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("""
-<div style="padding:8px 0 4px">
+<div style="padding:8px 0 12px">
   <div style="font-size:17px;font-weight:800;color:#e2e8f0;">💊 FDA Assistant</div>
   <div style="font-size:10px;color:#334155;margin-top:3px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;">Drug Label Intelligence</div>
 </div>""", unsafe_allow_html=True)
 
-    # ── Drug categories
-    st.markdown('<div class="sb-head">📂 Drug Categories</div>', unsafe_allow_html=True)
-    for cat, members in DRUG_CATEGORIES.items():
-        st.markdown(
-            f'<div style="font-size:10px;color:#475569;font-weight:600;margin:8px 0 4px;">{cat}</div>'
-            + '<div>' + ''.join(f'<span class="chip">{d}</span>' for d in members) + '</div>',
-            unsafe_allow_html=True,
-        )
+    # ── 1. Quick examples (lowest-friction way to start)
+    st.markdown('<div class="sb-head">💡 Try an example</div>', unsafe_allow_html=True)
+    examples = [
+        "What are the contraindications for warfarin?",
+        "What drug interactions does atorvastatin have?",
+        "What is the dosage for amoxicillin?",
+        "What are the warnings for lisinopril?",
+        "How does apixaban work?",
+    ]
+    for ex in examples:
+        if st.button(ex, key=ex, use_container_width=True):
+            st.session_state["prefill"] = ex
 
     st.divider()
 
-    # ── Scope filter (multiselect — lets user narrow to 1 or more drugs)
-    st.markdown('<div class="sb-head">🔍 Scope Answers To</div>', unsafe_allow_html=True)
-    st.caption("Leave blank to search all 20 drugs")
-    selected_drugs = st.multiselect(
-        "Drugs",
-        DRUGS,
-        default=[],
-        placeholder="All 20 drugs",
-        label_visibility="collapsed",
-    )
-
-    st.divider()
-
-    # ── Compare two drugs
-    st.markdown('<div class="sb-head">⚖️ Compare Two Drugs</div>', unsafe_allow_html=True)
+    # ── 2. Compare two drugs (next most common action)
+    st.markdown('<div class="sb-head">⚖️ Compare two drugs</div>', unsafe_allow_html=True)
     drug_a = st.selectbox("Drug A", DRUGS, index=0, key="drug_a")
     drug_b = st.selectbox("Drug B", DRUGS, index=1, key="drug_b")
     compare_topic = st.selectbox(
@@ -309,7 +300,7 @@ with st.sidebar:
         ["interactions", "warnings", "contraindications", "side effects", "dosage", "mechanism of action"],
         key="compare_topic",
     )
-    if st.button("⚖️ Compare", use_container_width=True):
+    if st.button("Compare", use_container_width=True, type="primary"):
         if drug_a == drug_b:
             st.warning("Select two different drugs.")
         else:
@@ -320,31 +311,34 @@ with st.sidebar:
 
     st.divider()
 
-    # ── Example questions
-    st.markdown('<div class="sb-head">💡 Example Questions</div>', unsafe_allow_html=True)
-    examples = [
-        "What are the contraindications for warfarin?",
-        "What drug interactions does atorvastatin have?",
-        "What is the dosage for amoxicillin?",
-        "What are the warnings for lisinopril?",
-        "What are the side effects of gabapentin?",
-        "How does apixaban work?",
-        "What are the adverse reactions for metformin?",
-    ]
-    for ex in examples:
-        if st.button(ex, key=ex, use_container_width=True):
-            st.session_state["prefill"] = ex
+    # ── 3. Optional scope filter
+    st.markdown('<div class="sb-head">🔍 Narrow to specific drugs (optional)</div>', unsafe_allow_html=True)
+    selected_drugs = st.multiselect(
+        "Drugs",
+        DRUGS,
+        default=[],
+        placeholder="All 20 drugs",
+        label_visibility="collapsed",
+    )
 
     st.divider()
 
-    # ── Limitations
-    st.markdown('<div class="sb-head">⚠️ Limitations</div>', unsafe_allow_html=True)
-    st.markdown("""
+    # ── 4. Reference (collapsed — only opens if user wants to browse)
+    with st.expander(f"📚 Browse all 20 drugs by category"):
+        for cat, members in DRUG_CATEGORIES.items():
+            st.markdown(
+                f'<div style="font-size:10px;color:#94a3b8;font-weight:700;margin:8px 0 4px;">{cat}</div>'
+                + '<div>' + ''.join(f'<span class="chip">{d}</span>' for d in members) + '</div>',
+                unsafe_allow_html=True,
+            )
+
+    with st.expander("⚠️ Limitations"):
+        st.markdown("""
 <div>
-  <div class="lim"><div class="lim-dot"></div><div><b style="color:#6b7280">20 drugs only</b> — not a complete FDA database</div></div>
-  <div class="lim"><div class="lim-dot"></div><div><b style="color:#6b7280">Top 5 passages</b> — answer quality limited by retrieval</div></div>
-  <div class="lim"><div class="lim-dot"></div><div><b style="color:#6b7280">Not medical advice</b> — consult a healthcare provider</div></div>
-  <div class="lim"><div class="lim-dot"></div><div><b style="color:#6b7280">Free tier APIs</b> — may slow under heavy load</div></div>
+  <div class="lim"><div class="lim-dot"></div><div><b style="color:#94a3b8">20 drugs only</b> — not a complete FDA database</div></div>
+  <div class="lim"><div class="lim-dot"></div><div><b style="color:#94a3b8">Top 5 passages</b> — answers limited by retrieval</div></div>
+  <div class="lim"><div class="lim-dot"></div><div><b style="color:#94a3b8">Not medical advice</b> — consult a healthcare provider</div></div>
+  <div class="lim"><div class="lim-dot"></div><div><b style="color:#94a3b8">Free tier APIs</b> — may slow under heavy load</div></div>
 </div>""", unsafe_allow_html=True)
 
     st.divider()
