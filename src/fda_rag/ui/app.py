@@ -108,12 +108,14 @@ st.markdown("""
     color: #f8fafc; margin-bottom: 10px; position: relative;
   }
   .hero-title span { color: #8b5cf6; }
-  .hero-desc { font-size: 0.9rem; color: #475569; line-height: 1.6; margin-bottom: 18px; max-width: 580px; }
-  .hero-metrics { display: flex; gap: 0; margin-bottom: 16px; border: 1px solid #1a2035; border-radius: 10px; overflow: hidden; width: fit-content; }
-  .hmetric { padding: 10px 18px; text-align: center; border-right: 1px solid #1a2035; }
+  .hero-desc { font-size: 0.95rem; color: #94a3b8; line-height: 1.6; margin-bottom: 18px; max-width: 600px; }
+  .hero-desc a { color: #60a5fa; text-decoration: none; }
+  .hero-desc a:visited { color: #60a5fa; }
+  .hero-metrics { display: flex; gap: 0; margin-bottom: 16px; border: 1px solid #1e293b; border-radius: 10px; overflow: hidden; width: fit-content; }
+  .hmetric { padding: 10px 20px; text-align: center; border-right: 1px solid #1e293b; }
   .hmetric:last-child { border-right: none; }
-  .hmetric-val { font-size: 1.35rem; font-weight: 900; color: #f1f5f9; line-height: 1; }
-  .hmetric-label { font-size: 9px; color: #334155; text-transform: uppercase; letter-spacing: .08em; margin-top: 4px; }
+  .hmetric-val { font-size: 1.4rem; font-weight: 900; color: #f1f5f9; line-height: 1; }
+  .hmetric-label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: .08em; margin-top: 5px; font-weight: 600; }
   .hero-tags { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
   .htag { font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 6px; border: 1px solid; }
   .gh-btn {
@@ -127,12 +129,12 @@ st.markdown("""
 
   /* pipeline */
   .pipe-wrap {
-    background: #0b0e1a; border: 1px solid #12172a;
-    border-radius: 14px; padding: 14px 20px; margin-bottom: 0.75rem;
+    background: #0b0e1a; border: 1px solid #1e293b;
+    border-radius: 14px; padding: 18px 22px; margin-bottom: 0.75rem;
   }
   .pipe-label {
-    font-size: 9px; font-weight: 700; letter-spacing: .12em;
-    text-transform: uppercase; color: #1e293b; margin-bottom: 10px;
+    font-size: 10px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: #64748b; margin-bottom: 12px;
   }
   .pipe-row { display: flex; align-items: center; gap: 0; }
   .pipe-node { display: flex; flex-direction: column; align-items: center; gap: 7px; flex: 1; }
@@ -155,10 +157,10 @@ st.markdown("""
   .src-score { font-size: 10px; color: #1f2937; margin-top: 8px; }
 
   /* sidebar */
-  .sb-head { font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #1e293b; margin: 20px 0 10px; }
-  .chip { display: inline-block; background: #0f172a; border: 1px solid #1e293b; border-radius: 5px; padding: 3px 9px; font-size: 10px; color: #4b5563; margin: 2px; font-weight: 500; }
-  .lim { display: flex; gap: 8px; font-size: 10px; color: #374151; margin-bottom: 8px; line-height: 1.5; }
-  .lim-dot { width: 5px; height: 5px; border-radius: 50%; background: #7f1d1d; margin-top: 5px; flex-shrink: 0; }
+  .sb-head { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #94a3b8; margin: 18px 0 10px; }
+  .chip { display: inline-block; background: #0f172a; border: 1px solid #1e293b; border-radius: 5px; padding: 3px 9px; font-size: 10px; color: #cbd5e1; margin: 2px; font-weight: 500; }
+  .lim { display: flex; gap: 8px; font-size: 11px; color: #94a3b8; margin-bottom: 8px; line-height: 1.5; }
+  .lim-dot { width: 5px; height: 5px; border-radius: 50%; background: #ef4444; margin-top: 6px; flex-shrink: 0; }
 
   /* ── mobile ── */
   @media (max-width: 768px) {
@@ -201,8 +203,7 @@ st.markdown("""
   <div class="hero-pill">⚡ Retrieval-Augmented Generation</div>
   <div class="hero-title">FDA Drug Label<br><span>Assistant</span></div>
   <div class="hero-desc">
-    Ask plain-English questions about FDA-approved drug labels.<br>
-    Every answer is grounded in official <a href="https://dailymed.nlm.nih.gov" style="color:#60a5fa;text-decoration:none;">DailyMed</a> source text — zero hallucination.
+    Ask plain-English questions about FDA-approved drug labels. Every answer is grounded in official <a href="https://dailymed.nlm.nih.gov" target="_blank">DailyMed</a> source text — zero hallucination.
   </div>
   <div class="hero-metrics">
     <div class="hmetric"><div class="hmetric-val">20</div><div class="hmetric-label">Drug Labels</div></div>
@@ -226,11 +227,11 @@ st.markdown("""
 st.markdown("""
 <div class="pipe-wrap">
 <div class="pipe-label">How it works</div>
-<p style="font-size:12.5px;color:#94a3b8;line-height:1.65;margin:0 0 10px 0;">
-This app uses <b style="color:#e2e8f0;">Retrieval-Augmented Generation (RAG)</b> to ground every answer in
+<p style="font-size:14px;color:#cbd5e1;line-height:1.65;margin:0 0 12px 0;">
+This app uses <b style="color:#f1f5f9;">Retrieval-Augmented Generation (RAG)</b> to ground every answer in
 real FDA-approved drug labels from DailyMed — no memorized training data, no hallucinations.
 </p>
-<p style="font-size:12.5px;color:#94a3b8;line-height:1.65;margin:0 0 10px 0;">
+<p style="font-size:14px;color:#cbd5e1;line-height:1.65;margin:0;">
 Your question is embedded by <b style="color:#93c5fd;">Voyage AI</b>, matched against 735 indexed passages in
 <b style="color:#86efac;">Neon Postgres</b> with pgvector, reranked, and sent to <b style="color:#c4b5fd;">Groq Llama 3.3 70B</b> with
 strict instructions to cite every claim — orchestrated by a <b style="color:#fcd34d;">LangGraph</b> agent.
@@ -272,8 +273,8 @@ def run_query(question: str) -> tuple[str, list]:
 with st.sidebar:
     st.markdown("""
 <div style="padding:8px 0 12px">
-  <div style="font-size:17px;font-weight:800;color:#e2e8f0;">💊 FDA Assistant</div>
-  <div style="font-size:10px;color:#334155;margin-top:3px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;">Drug Label Intelligence</div>
+  <div style="font-size:18px;font-weight:800;color:#f1f5f9;">💊 FDA Assistant</div>
+  <div style="font-size:10px;color:#64748b;margin-top:4px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Drug Label Intelligence</div>
 </div>""", unsafe_allow_html=True)
 
     # ── 1. Quick examples (lowest-friction way to start)
