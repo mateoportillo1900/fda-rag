@@ -8,7 +8,7 @@
 
 > Ask plain-English questions about FDA-approved drug labels and get cited, grounded answers — no hallucination.
 
-**[🚀 Live Demo →](https://fda-rag-gmlp6hufrw3trprm8h2srz.streamlit.app)**
+**[🚀 Live Demo →](https://fda-rag-gmlp6hufrw3trprm8h2srz.streamlit.app)** · **[📚 Documentation →](./docs/README.md)**
 
 ---
 
